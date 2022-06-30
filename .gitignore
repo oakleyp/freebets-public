@@ -1,0 +1,8 @@
+venv/
+*.pyc
+.ipynb_checkpoints/
+catboost_info/
+.vscode/
+.env
+cookiecutter-config-file.yml
+historical-crawler.jar

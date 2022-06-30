@@ -1,0 +1,8 @@
+.mypy_cache
+.coverage
+htmlcov
+.venv/
+pdf/
+lib_private/
+.pytest_cache/
+.vscode/
