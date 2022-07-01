@@ -6,3 +6,4 @@ catboost_info/
 .env
 cookiecutter-config-file.yml
 historical-crawler.jar
+docker-stack.yml
