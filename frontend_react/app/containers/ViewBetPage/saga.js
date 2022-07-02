@@ -8,7 +8,7 @@ import { LOAD_BET } from './constants';
 
 export function* getBet() {
   const betId = yield select(makeSelectBetId());
-  const requestURL = `http://desktop-ebchtvi/api/v1/bets/${betId}`;
+  const requestURL = `http://${process.env.API_URL}/v1/bets/${betId}`;
 
   try {
     // Call our request helper (see 'utils/request')

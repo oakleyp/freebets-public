@@ -63,7 +63,7 @@ With the shiny consumer-grade docs out of the way for now, the rest of my docume
 - React & Redux/Saga frontend with test suite
 - Pre-commit hooks for automatic linting, formatting, and testing
 - Yandex Clickhouse as an ML datalake for historical races
-- Yandex Catboost for predictions on race data via gradient-boosted forests
+- Yandex Catboost for predictions on race data via gradient-boosted trees
 - Event-based (pub/sub) microservices architecture via RabbitMQ
 - Docker and docker swarm build system for isolated dev/stage/prod environments and test DB
 - Traefik load balancer/proxy

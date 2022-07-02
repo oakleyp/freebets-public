@@ -18,7 +18,7 @@ export function* getBetsList() {
   };
 
   // TODO op use env url base
-  const reqUrl = 'http://desktop-ebchtvi/api/v1/bets?' +
+  const reqUrl = `http://${process.env.API_URL}/api/v1/bets?` +
     Object.entries(paramMapping)
       .reduce((tokenlist, [token, val]) =>
         ![null, undefined].includes(val) ?

@@ -172,10 +172,7 @@ class RaceDayProcessor:
                 continue
 
             if not next_nct:
-                logger.info(
-                    "No upcoming nct within configured time context.",
-                    self.max_sleep_secs,
-                )
+                logger.info("No upcoming nct within configured time context.")
                 self._log_and_sleep(self.max_sleep_secs)
 
             # Sleep for either the max_sleep time or the soonest nct,

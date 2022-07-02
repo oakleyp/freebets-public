@@ -2,7 +2,7 @@ import logging
 from datetime import date
 from typing import Generator, List
 
-from app.lib.clients.historical_abstract import HistoricalRacingClient, HistoricalRacingClientException
+from app.lib.clients.historical_abstract import AbstractHistoricalRacingClient, AbstractHistoricalRacingClientException
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def create_default_err_handler() -> Generator:
 
 
 class HistoricalRacingCrawler:
-    def __init__(self, client: HistoricalRacingClient) -> None:
+    def __init__(self, client: AbstractHistoricalRacingClient) -> None:
         self.client = client
 
     def crawl_date(
@@ -44,7 +44,7 @@ class HistoricalRacingCrawler:
                 self.client.download_chart_to_file(
                     file_path, file_name, track_code, tdate, race_no="A"
                 )
-            except HistoricalRacingClientException as e:
+            except AbstractHistoricalRacingClientException as e:
                 err_handler.throw(e, "Failed downloading file %s" % file_name)
                 continue
 
