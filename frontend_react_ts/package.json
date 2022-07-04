@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@fontsource/roboto": "4.5.7",
+    "@mui/icons-material": "5.8.4",
+    "@mui/material": "5.8.6",
+    "@mui/styled-engine-sc": "5.8.0",
+    "@mui/styled-engine": "npm:@mui/styled-engine-sc@latest",
     "@reduxjs/toolkit": "1.7.1",
     "@testing-library/jest-dom": "5.16.1",
     "@testing-library/react": "12.1.2",
@@ -53,7 +58,7 @@
     "sanitize.css": "13.0.0",
     "serve": "13.0.2",
     "shelljs": "0.8.5",
-    "styled-components": "5.3.3",
+    "styled-components": "5.3.5",
     "stylelint": "14.2.0",
     "stylelint-config-recommended": "6.0.0",
     "stylelint-config-styled-components": "0.1.1",
@@ -61,6 +66,9 @@
     "ts-node": "10.4.0",
     "typescript": "4.5.4",
     "web-vitals": "2.1.2"
+  },
+  "resolutions": {
+    "@mui/styled-engine": "npm:@mui/styled-engine-sc@latest"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -16,7 +16,8 @@
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "jsx": "react",
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "downlevelIteration": true
   },
   "include": ["src"],
   "ts-node": {
