@@ -1,5 +1,4 @@
 import { AppBar } from 'app/components/AppBar/Loadable';
-import { BetIndex } from './Features/BetsIndex';
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -13,13 +12,16 @@ import Grid from '@mui/material/Grid';
 import { Copyright } from 'app/components/Copyright';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import { BetView } from './Features/BetView';
 
-export function HomePage() {
+export function BetViewPage({ match }) {
+  const { params } = match;
+
   return (
     <>
       <Helmet>
-        <title>Freebets - Plays</title>
-        <meta name="description" content="Freebets - Daily Plays" />
+        <title>Freebets - View Play</title>
+        <meta name="description" content="Freebets - View Play" />
       </Helmet>
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
@@ -48,7 +50,7 @@ export function HomePage() {
               noWrap
               sx={{ flexGrow: 1 }}
             >
-              Freebets - Home
+              Freebets - View Play
             </Typography>
             <IconButton color="inherit">
               <Badge badgeContent={4} color="secondary">
@@ -73,7 +75,7 @@ export function HomePage() {
               <Grid container spacing={3}>
                 {/* Recent Orders */}
                 <Grid item xs={12}>
-                  <BetIndex />
+                  <BetView betId={params.betId} />
                 </Grid>
               </Grid>
               <Copyright sx={{ pt: 4 }} />
