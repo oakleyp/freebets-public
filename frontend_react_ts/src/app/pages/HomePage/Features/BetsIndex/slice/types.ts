@@ -1,0 +1,33 @@
+import { SingleBet, MultiBet, BetStratType } from 'types/Bet';
+
+export const BET_LABELS = {
+  'BetType.ALL_WIN_ARB': 'All Win',
+  'BetType.BOX_WIN_ARB': '(Multi) Box Win',
+  'BetType.WIN_BET': 'Win',
+};
+
+export type BetsIndexState = {
+  loading: boolean;
+  error?: BetsErrorType | null;
+  currentBetSearchParams: BetSearchParams;
+  currentBetList: BetList;
+  selectedBet?: SingleBet | MultiBet | null;
+};
+
+export type BetList = {
+  singleBets: any[];
+  multiBets: any[];
+};
+
+export type BetSearchParams = {
+  betTypes?: string[] | null;
+  betStratTypes?: BetStratType[] | null;
+  limit: number;
+  skip: number;
+  trackCodes: Array<string>;
+};
+
+export enum BetsErrorType {
+  RESPONSE_ERROR = 1,
+  NO_BETS_ERROR = 2,
+}

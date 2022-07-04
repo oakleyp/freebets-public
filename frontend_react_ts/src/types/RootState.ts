@@ -1,4 +1,5 @@
 import { ThemeState } from 'styles/theme/slice/types';
+import { BetsIndexState } from 'app/pages/HomePage/Features/BetsIndex/slice/types';
 // [IMPORT NEW CONTAINERSTATE ABOVE] < Needed for generating containers seamlessly
 
 /*
@@ -7,5 +8,6 @@ import { ThemeState } from 'styles/theme/slice/types';
 */
 export interface RootState {
   theme?: ThemeState;
+  betsIndex?: BetsIndexState;
   // [INSERT NEW REDUCER KEY ABOVE] < Needed for generating containers seamlessly
 }

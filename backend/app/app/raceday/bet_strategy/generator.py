@@ -12,7 +12,7 @@ from .bet_strategies import (
 )
 
 DefaultBetStrategy = BetStrategy(
-    outlay_strategy=FlatBetOutlayStrategy, sort_strategy=AvgCostRewardSortStrategy,
+    outlay_strategy=FlatBetOutlayStrategy(), sort_strategy=AvgCostRewardSortStrategy(),
 )
 
 
@@ -36,7 +36,7 @@ class BetGen:
             ),
         ]
 
-        result.extend(self.win_box_bet_gen())
+        # result.extend(self.win_box_bet_gen())
 
         return result
 
