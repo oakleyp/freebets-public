@@ -17,7 +17,7 @@ export const initialState: BetsIndexState = {
     betStratTypes: null,
     limit: 2000,
     skip: 0,
-    trackCodes: ['gcv'], // TODO
+    trackCodes: [], // TODO
   },
   selectedBet: null,
 };

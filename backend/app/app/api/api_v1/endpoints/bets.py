@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-DEFAULT_TRACK_CODES = ["kee", "cd", "mrn"]
+# DEFAULT_TRACK_CODES = ["kee", "cd", "mrn"]
+DEFAULT_TRACK_CODES = []
 DEFAULT_BET_STRAT_TYPES = list(
     map(str, [BetStrategyType.BOOK_ALL_WIN_ARB, BetStrategyType.BOOK_BOX_WIN_ARB],)
 )

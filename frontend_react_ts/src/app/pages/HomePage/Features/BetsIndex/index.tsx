@@ -9,18 +9,24 @@ import {
   selectSelectedBet,
 } from './slice/selectors';
 
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
+import { styled } from '@mui/material/styles';
+import Grid from '@mui/material/Grid';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import FolderIcon from '@mui/icons-material/Folder';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 
 import { useBetIndexSlice } from './slice';
 import { MultiBet, SingleBet } from 'types/Bet';
+import { Folder, FolderCopy } from '@mui/icons-material';
+import { Chip, Stack } from '@mui/material';
 
 export function BetIndex() {
   const { actions } = useBetIndexSlice();
@@ -90,10 +96,18 @@ export function BetIndex() {
   ];
 
   const Loader = (
-    <Box sx={{ display: 'flex' }}>
+    <Box>
       <CircularProgress />
     </Box>
   );
+
+  function getBetIcon(bet: any): any {
+    if (bet.sub_bets) {
+      return <FolderCopy />;
+    }
+
+    return <Folder />;
+  }
 
   function getBetName(bet: any): any {
     if (bet.sub_bets) {
@@ -107,39 +121,49 @@ export function BetIndex() {
     return bet.race.track_code.toUpperCase();
   }
 
-  function betTable(bets: any) {
+  function listBets(bets: any) {
     return (
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="simple table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Bet</TableCell>
-              <TableCell align="right">Cost</TableCell>
-              <TableCell align="right">Min Reward</TableCell>
-              <TableCell align="right">Avg Reward</TableCell>
-              <TableCell align="right">Max Reward</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {[...bets.singleBets, ...bets.multiBets].map((bet: any) => (
-              <TableRow
-                key={bet.title}
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
-                <TableCell component="th" scope="row">
-                  {getBetName(bet)}
-                </TableCell>
-                <TableCell align="right">{bet.cost}</TableCell>
-                <TableCell align="right">{bet.min_reward}</TableCell>
-                <TableCell align="right">{bet.avg_reward}</TableCell>
-                <TableCell align="right">{bet.max_reward}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <List>
+        {[...bets.multiBets, ...bets.singleBets].map(bet => (
+          <ListItem>
+            <ListItemAvatar>
+              <Avatar>{getBetIcon(bet)}</Avatar>
+            </ListItemAvatar>
+            <ListItemText
+              primary={getBetName(bet)}
+              secondary={
+                <Stack direction="row" spacing={1}>
+                  <Chip label={`Min Reward = ${bet.min_reward}`} />
+                  <Chip label={`Avg Reward = ${bet.avg_reward}`} />
+                  <Chip label={`Max Reward = ${bet.max_reward}`} />
+                </Stack>
+              }
+            />
+          </ListItem>
+        ))}
+      </List>
     );
   }
 
-  return <>{loading ? Loader : betTable(bets)}</>;
+  function betTable(bets: any) {
+    return (
+      <>
+        <ListHeader sx={{ mt: 4, mb: 2 }} variant="h6">
+          Upcoming Plays
+        </ListHeader>
+        <ListContainer>{loading ? Loader : listBets(bets)}</ListContainer>
+      </>
+    );
+  }
+
+  return betTable(bets);
 }
+
+const ListContainer = styled('div')(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.text.primary,
+}));
+
+const ListHeader = styled(Typography)(({ theme, ...props }) => ({
+  color: theme.palette.text.primary,
+}));
