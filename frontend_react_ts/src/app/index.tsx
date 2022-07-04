@@ -14,6 +14,7 @@ import { GlobalStyle } from 'styles/global-styles';
 
 import { HomePage } from './pages/HomePage/Loadable';
 import { NotFoundPage } from './components/NotFoundPage/Loadable';
+import { BetViewPage } from './pages/BetViewPage/Loadable';
 import { useTranslation } from 'react-i18next';
 
 export function App() {
@@ -33,6 +34,7 @@ export function App() {
 
       <Switch>
         <Route exact path="/" component={HomePage} />
+        <Route exact path="/bets/:betId" component={BetViewPage} />
         <Route component={NotFoundPage} />
       </Switch>
       <GlobalStyle />

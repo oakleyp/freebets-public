@@ -42,6 +42,11 @@ export interface BetsListResponse {
   bet_strat_types: BetStratType[];
 }
 
+export interface BetViewResponse {
+  data: MultiBet | SingleBet;
+  result_type: string;
+}
+
 export const ALL_TRACKS = [
   'kee',
   'cd',

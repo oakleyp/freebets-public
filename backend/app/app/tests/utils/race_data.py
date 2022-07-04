@@ -33,6 +33,11 @@ def create_uniform_range_for_time_unit(n: int, unit: str) -> List[float]:
     return sorted(np.random.uniform(0, max, n).tolist())
 
 
+def create_random_odds_str() -> str:
+    """e.g. '5/2'"""
+    return f"{random.randint(1, 50)}/{random.randint(1,3)}"
+
+
 def create_race_details_n(
     n: int,
     *,
@@ -211,7 +216,6 @@ def create_race_and_starter_details(
 def create_starters_n(n: int) -> List[StarterDetails]:
     return [create_starter(n, n) for n in range(n)]
 
-
 def create_starter(horse_num: int, pp: int) -> StarterDetails:
     return StarterDetails(
         startId=random.randint(1, 9999),
@@ -277,7 +281,7 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         silkUriPath=random_lower_string(length=12),
         expertPickRank=None,
         blinkers=None,
-        morningLineOdds=random_lower_string(length=12),
+        morningLineOdds=create_random_odds_str(),
         alsoEligible=[False, None, True][random.randint(0, 2)],
         mainTrackOnly=[False, None, True][random.randint(0, 2)],
         morningLineFavorite=[False, None, True][random.randint(0, 2)],

@@ -11,22 +11,22 @@ from sqlalchemy.orm import Session
 def seed_all():
     db: Session = SessionLocal()
 
-    track_races = create_track_with_race_and_starter_details_n(10)
+    track_races = create_track_with_race_and_starter_details_n(30)
 
-    races: List[Race] = []
+    all_races: List[Race] = []
 
     for track_race in track_races:
         races = LiveTrackExtendedCanonical(track_race).convert()
-        races.extend(races)
+        all_races.extend(races)
 
-    db.add_all(races)
+    db.add_all(all_races)
     db.commit()
 
     bet_tagger = BetTagger(db)
 
-    print("Gen %d races", len(races))
+    print("Gen %d races", len(all_races))
 
-    for race in races:
+    for race in all_races:
         bet_gen = BetGen(race=race)
         bets = bet_gen.arbitrage_bets()
 
