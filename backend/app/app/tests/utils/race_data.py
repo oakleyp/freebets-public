@@ -7,8 +7,10 @@ import numpy as np
 from app.lib.schemas.live_racing import (
     Featured,
     RaceDetails,
+    RaceWithStarterDetails,
     StarterDetails,
     SurfaceConditions,
+    TrackWithRaceAndStarterDetails,
     TrackWithRaceDetails,
 )
 from app.tests.utils.utils import random_datetime_in_range, random_lower_string
@@ -117,6 +119,92 @@ def create_track_with_race_details(
         surfaceConditions=[SurfaceConditions(type="dirt", condition="fast",)],
         featured=[Featured(featuredTrackId=1, label=random_lower_string(), races=3,)],
         races=create_race_details_n(2, adjacent=True, **race_details_args),
+    )
+
+def create_track_with_race_and_starter_details_n(n: int) -> List[TrackWithRaceAndStarterDetails]:
+    return [create_track_with_race_and_starter_details() for _ in range(n)]
+
+def create_track_with_race_and_starter_details(
+    race_details_args: Dict[str, Any] = {}
+) -> TrackWithRaceAndStarterDetails:
+    return TrackWithRaceAndStarterDetails(
+        brisCode=random_lower_string(length=3),
+        name=random_lower_string(),
+        type="Thoroughbred",
+        status="Open",
+        currentRaceNumber=1,
+        hostCountry=random_lower_string(length=3),
+        hasBetTypes=True,
+        allowsConditionalWagering=True,
+        surfaceConditions=[SurfaceConditions(type="dirt", condition="fast",)],
+        featured=[Featured(featuredTrackId=1, label=random_lower_string(), races=3,)],
+        races=create_race_and_starter_details_n(2, adjacent=True, **race_details_args),
+    )
+
+def create_race_and_starter_details_n(
+    n: int,
+    *,
+    adjacent: bool = False,
+    adjacent_dt_start: datetime = datetime.now(timezone.utc),
+    adjacent_increment: str = "minutes",
+    **race_detail_args
+) -> List[RaceWithStarterDetails]:
+    if not adjacent:
+        return [create_race_and_starter_details(i + 1, **race_detail_args) for i in range(n)]
+
+    uniform_rng = create_uniform_range_for_time_unit(n, adjacent_increment)
+
+    results: List[RaceDetails] = []
+
+    curr_start = adjacent_dt_start
+    curr_end = adjacent_dt_start
+
+    for i in range(n):
+        curr_end = curr_start + timedelta(**{adjacent_increment: uniform_rng[i]})
+        results.append(
+            create_race_and_starter_details(
+                i + 1, dt_range=(curr_start, curr_end), precision_mod=adjacent_increment
+            )
+        )
+        curr_start = curr_end
+
+    return results
+
+def create_race_and_starter_details(
+    race_number: int,
+    *,
+    dt_range: Tuple[datetime, datetime] = (
+        datetime.now(timezone.utc),
+        datetime.now(timezone.utc) + timedelta(hours=2),
+    ),
+    status: str = "Open",
+    current_race: bool = False,
+    precision_mod: str = "minutes"
+) -> RaceWithStarterDetails:
+    post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
+
+    print(*dt_range, post_time)
+
+    return RaceWithStarterDetails(
+        raceNumber=race_number,
+        raceDate=random_datetime_in_range(*dt_range).date(),
+        postTime=post_time,
+        postTimeStamp=post_time.timestamp() * 1000,
+        mtp=99,
+        status=status,
+        distance=random_lower_string(),
+        distanceLong=random_lower_string(),
+        surface=random_lower_string(),
+        surfaceLabel=random_lower_string(),
+        ageRestrictions=random_lower_string(),
+        sexRestrictions=random_lower_string(),
+        raceDescription=random_lower_string(),
+        wagers=random_lower_string(),
+        country=random_lower_string(length=3),
+        carryover=[],
+        currentRace=current_race,
+        hasExpertPick=True,
+        starters=create_starters_n(random.randint(6, 15))
     )
 
 

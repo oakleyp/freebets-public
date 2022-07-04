@@ -149,18 +149,6 @@ class BetTypeImpl(ABC):
         self.horses = horses
         self.selection = selection
 
-    @abstractmethod
-    def bet_type(self) -> BetType:
-        raise NotImplementedError(
-            "bet_type() not implemented for %s" % self.__class__.__name__
-        )
-
-    @abstractmethod
-    def bet_strategy_type(self) -> BetStrategyType:
-        raise NotImplementedError(
-            "bet_strategy_type() not implemented for %s" % self.__class__.__name__
-        )
-
     def cost(self) -> float:
         raise NotImplementedError(
             "cost() not implemented for %s" % self.__class__.__name__
@@ -236,7 +224,7 @@ class AvgCostRewardSortStrategy(BetSortStrategy):
     """Strategy that sorts bets in order of their cost/avg_reward ratio (best first)."""
 
     def sort(self, bets: List[BetTypeImpl]) -> List[BetTypeImpl]:
-        return sorted(bets, key=lambda a: a.cost() / a.avg_reward())
+        return sorted(bets, key=lambda a: a.cost() / (a.avg_reward() or 1))
 
 
 class WinBet(BetTypeImpl):
