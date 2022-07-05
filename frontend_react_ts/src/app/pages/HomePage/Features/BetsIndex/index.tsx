@@ -133,9 +133,9 @@ export function BetIndex() {
               primary={getBetName(bet)}
               secondary={
                 <Stack direction="row" spacing={1}>
-                  <Chip label={`Min Reward = ${bet.min_reward}`} />
-                  <Chip label={`Avg Reward = ${bet.avg_reward}`} />
-                  <Chip label={`Max Reward = ${bet.max_reward}`} />
+                  <Chip label={`Min Reward = ${bet.min_reward.toFixed(2)}`} />
+                  <Chip label={`Avg Reward = ${bet.avg_reward.toFixed(2)}`} />
+                  <Chip label={`Max Reward = ${bet.max_reward.toFixed(2)}`} />
                 </Stack>
               }
             />

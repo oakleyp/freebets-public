@@ -13,8 +13,24 @@ import Grid from '@mui/material/Grid';
 import { Copyright } from 'app/components/Copyright';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import { useDispatch, useSelector } from 'react-redux';
+import { useThemeSlice } from 'styles/theme/slice';
+import { selectThemeKey } from 'styles/theme/slice/selectors';
+import { DarkMode, LightMode } from '@mui/icons-material';
 
 export function HomePage() {
+  const dispatch = useDispatch();
+  const { actions } = useThemeSlice();
+
+  const currentTheme = useSelector(selectThemeKey);
+
+  const darkModeIcon =
+    currentTheme === 'dark' ? (
+      <LightMode onClick={() => dispatch(actions.changeTheme('light'))} />
+    ) : (
+      <DarkMode onClick={() => dispatch(actions.changeTheme('dark'))} />
+    );
+
   return (
     <>
       <Helmet>
@@ -52,7 +68,7 @@ export function HomePage() {
             </Typography>
             <IconButton color="inherit">
               <Badge badgeContent={4} color="secondary">
-                <NotificationsIcon />
+                {darkModeIcon}
               </Badge>
             </IconButton>
           </Toolbar>
