@@ -25,8 +25,22 @@ import Box from '@mui/material/Box';
 
 import { useBetIndexSlice } from './slice';
 import { MultiBet, SingleBet } from 'types/Bet';
-import { Folder, FolderCopy } from '@mui/icons-material';
-import { Chip, Stack } from '@mui/material';
+import {
+  AirplaneTicket,
+  FileCopy,
+  Folder,
+  FolderCopy,
+  InsertDriveFile,
+} from '@mui/icons-material';
+import {
+  Alert,
+  AlertTitle,
+  Chip,
+  ListItemButton,
+  Paper,
+  Stack,
+} from '@mui/material';
+import { JsxChild, JsxElement, JsxExpression } from 'typescript';
 
 export function BetIndex() {
   const { actions } = useBetIndexSlice();
@@ -96,17 +110,17 @@ export function BetIndex() {
   ];
 
   const Loader = (
-    <Box>
+    <Box sx={{ display: 'flex', justifyContent: 'center', padding: '2em' }}>
       <CircularProgress />
     </Box>
   );
 
   function getBetIcon(bet: any): any {
     if (bet.sub_bets) {
-      return <FolderCopy />;
+      return <FileCopy />;
     }
 
-    return <Folder />;
+    return <AirplaneTicket />;
   }
 
   function getBetName(bet: any): any {
@@ -121,38 +135,80 @@ export function BetIndex() {
     return bet.race.track_code.toUpperCase();
   }
 
+  const tagColorMap = {
+    'good value': 'primary',
+    free: 'warning',
+  };
+
+  function tagColor(tagName: string) {
+    return tagColorMap[tagName];
+  }
+
+  function getTags(bet: any): any {
+    return (
+      <TagsContainer>
+        <Stack direction="row" spacing={1}>
+          {bet.tags.map(tag => (
+            <Chip label={tag.name} color={tagColor(tag.name.toLowerCase())} />
+          ))}
+        </Stack>
+      </TagsContainer>
+    );
+  }
+
   function listBets(bets: any) {
     return (
       <List>
         {[...bets.multiBets, ...bets.singleBets].map(bet => (
-          <ListItem>
+          <BetListItem>
             <ListItemAvatar>
               <Avatar>{getBetIcon(bet)}</Avatar>
             </ListItemAvatar>
             <ListItemText
               primary={getBetName(bet)}
               secondary={
-                <Stack direction="row" spacing={1}>
-                  <Chip label={`Min Reward = ${bet.min_reward.toFixed(2)}`} />
-                  <Chip label={`Avg Reward = ${bet.avg_reward.toFixed(2)}`} />
-                  <Chip label={`Max Reward = ${bet.max_reward.toFixed(2)}`} />
-                </Stack>
+                <>
+                  <Stack direction="row" spacing={1}>
+                    <span>{`Cost = ${bet.cost.toFixed(2)}`}</span>
+                    <span>{`Min Reward = ${bet.min_reward.toFixed(2)}`}</span>
+                    <span>{`Avg Reward = ${bet.avg_reward.toFixed(2)}`}</span>
+                    <span>{`Max Reward = ${bet.max_reward.toFixed(2)}`}</span>
+                  </Stack>
+                  {getTags(bet)}
+                </>
               }
             />
-          </ListItem>
+          </BetListItem>
         ))}
       </List>
     );
   }
 
+  function loadErrorOr(fn: Function) {
+    if (loading) {
+      return Loader;
+    }
+
+    if (error) {
+      return (
+        <Alert severity="error">
+          <AlertTitle>Something went wrong...</AlertTitle>
+          Unable to load bets — <strong>{`${error}`}</strong>
+        </Alert>
+      );
+    }
+
+    return fn();
+  }
+
   function betTable(bets: any) {
     return (
-      <>
+      <Paper>
         <ListHeader sx={{ mt: 4, mb: 2 }} variant="h6">
           Upcoming Plays
         </ListHeader>
-        <ListContainer>{loading ? Loader : listBets(bets)}</ListContainer>
-      </>
+        <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
+      </Paper>
     );
   }
 
@@ -160,10 +216,24 @@ export function BetIndex() {
 }
 
 const ListContainer = styled('div')(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
+  backgroundColor: 'transparent',
   color: theme.palette.text.primary,
+  overflowY: 'auto',
+  maxHeight: '60vh',
+}));
+
+const BetListItem = styled(ListItemButton)(({ theme, ...props }) => ({
+  paddingTop: '8px',
+  paddingBottom: '16px',
+  border: '1px solid',
+  margin: '0.5em 0',
+  borderRadius: '5px',
 }));
 
 const ListHeader = styled(Typography)(({ theme, ...props }) => ({
   color: theme.palette.text.primary,
+}));
+
+const TagsContainer = styled('div')(({ theme, ...props }) => ({
+  paddingTop: '0.4em',
 }));

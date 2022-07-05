@@ -12,7 +12,6 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { Copyright } from 'app/components/Copyright';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useDispatch, useSelector } from 'react-redux';
 import { useThemeSlice } from 'styles/theme/slice';
 import { selectThemeKey } from 'styles/theme/slice/selectors';
@@ -67,9 +66,7 @@ export function HomePage() {
               Freebets - Home
             </Typography>
             <IconButton color="inherit">
-              <Badge badgeContent={4} color="secondary">
-                {darkModeIcon}
-              </Badge>
+              <Badge color="secondary">{darkModeIcon}</Badge>
             </IconButton>
           </Toolbar>
           <Box
