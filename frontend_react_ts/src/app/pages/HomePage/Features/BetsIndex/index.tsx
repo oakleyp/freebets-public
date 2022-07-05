@@ -1,4 +1,10 @@
-import React, { useState, memo, useEffect } from 'react';
+import React, {
+  useState,
+  memo,
+  useEffect,
+  useRef,
+  MutableRefObject,
+} from 'react';
 import PropTypes from 'prop-types';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -9,9 +15,10 @@ import {
   selectSelectedBet,
 } from './slice/selectors';
 
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import Grid from '@mui/material/Grid';
 import List from '@mui/material/List';
+import Drawer from '@mui/material/Drawer';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -21,7 +28,18 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import FolderIcon from '@mui/icons-material/Folder';
 import CircularProgress from '@mui/material/CircularProgress';
+import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
+import Divider from '@mui/material/Divider';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+import MailIcon from '@mui/icons-material/Mail';
 import Box from '@mui/material/Box';
+import headerImage from '../../assets/wow.gif';
+import LinearProgress, {
+  linearProgressClasses,
+} from '@mui/material/LinearProgress';
 
 import { useBetIndexSlice } from './slice';
 import { MultiBet, SingleBet } from 'types/Bet';
@@ -39,6 +57,7 @@ import {
   ListItemButton,
   Paper,
   Stack,
+  Toolbar,
 } from '@mui/material';
 import { JsxChild, JsxElement, JsxExpression } from 'typescript';
 
@@ -110,8 +129,9 @@ export function BetIndex() {
   ];
 
   const Loader = (
-    <Box sx={{ display: 'flex', justifyContent: 'center', padding: '2em' }}>
-      <CircularProgress />
+    <Box sx={{}}>
+      <img src={headerImage} alt="" style={{ width: '100%' }} />
+      <BorderLinearProgress />
     </Box>
   );
 
@@ -201,14 +221,98 @@ export function BetIndex() {
     return fn();
   }
 
+  const theme = useTheme();
+
+  const containerRef: MutableRefObject<Element | null> = useRef(null);
+
+  useEffect(() => {
+    console.log(containerRef.current);
+  }, [containerRef]);
+
+  const [filterOpen, setFilterOpen] = useState(false);
+
   function betTable(bets: any) {
     return (
-      <Paper>
-        <ListHeader sx={{ mt: 4, mb: 2 }} variant="h6">
-          Upcoming Plays
-        </ListHeader>
-        <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
-      </Paper>
+      <Box
+        component={Paper}
+        ref={containerRef}
+        id="drawcontainer"
+        sx={{ position: 'relative' }}
+      >
+        <AppBar
+          open={filterOpen}
+          sx={{
+            position: 'static',
+          }}
+        >
+          <Toolbar sx={{ display: 'flex' }}>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={() => {
+                setFilterOpen(true);
+              }}
+              edge="start"
+              sx={{ mr: 2, ...(filterOpen && { display: 'none' }) }}
+              // sx={{ mr: 2, ...{ display: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap component="div">
+              Upcoming Plays
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <Box
+          component="nav"
+          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+          aria-label="mailbox folders"
+        >
+          <Drawer
+            sx={{
+              width: drawerWidth,
+              flexShrink: 0,
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                boxSizing: 'border-box',
+                position: 'absolute',
+              },
+            }}
+            container={containerRef.current}
+            variant="persistent"
+            anchor="left"
+            open={filterOpen}
+          >
+            <DrawerHeader>
+              <IconButton onClick={() => setFilterOpen(false)}>
+                {theme.direction === 'ltr' ? (
+                  <ChevronLeftIcon />
+                ) : (
+                  <ChevronRightIcon />
+                )}
+              </IconButton>
+            </DrawerHeader>
+            <Divider />
+            <List>
+              {['Inbox', 'Starred', 'Send email', 'Drafts'].map(
+                (text, index) => (
+                  <ListItem key={text} disablePadding>
+                    <ListItemButton>
+                      <ListItemIcon>
+                        {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                      </ListItemIcon>
+                      <ListItemText primary={text} />
+                    </ListItemButton>
+                  </ListItem>
+                ),
+              )}
+            </List>
+          </Drawer>
+        </Box>
+        <Main open={filterOpen}>
+          <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
+        </Main>
+      </Box>
     );
   }
 
@@ -220,6 +324,8 @@ const ListContainer = styled('div')(({ theme }) => ({
   color: theme.palette.text.primary,
   overflowY: 'auto',
   maxHeight: '60vh',
+  marginLeft: `${drawerWidth}px`,
+  padding: '0 0.2em',
 }));
 
 const BetListItem = styled(ListItemButton)(({ theme, ...props }) => ({
@@ -236,4 +342,68 @@ const ListHeader = styled(Typography)(({ theme, ...props }) => ({
 
 const TagsContainer = styled('div')(({ theme, ...props }) => ({
   paddingTop: '0.4em',
+}));
+
+const drawerWidth = 240;
+
+const Main = styled('main', { shouldForwardProp: prop => prop !== 'open' })<{
+  open?: boolean;
+}>(({ theme, open }) => ({
+  flexGrow: 1,
+  padding: theme.spacing(1),
+  transition: theme.transitions.create('margin', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  marginLeft: `-${drawerWidth}px`,
+  ...(open && {
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    marginLeft: 0,
+  }),
+}));
+
+interface AppBarProps extends MuiAppBarProps {
+  open?: boolean;
+}
+
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: prop => prop !== 'open',
+})<AppBarProps>(({ theme, open }) => ({
+  transition: theme.transitions.create(['margin', 'width'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 1),
+  // necessary for content to be below app bar
+  ...theme.mixins.toolbar,
+  justifyContent: 'flex-end',
+}));
+
+const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
+  height: 6,
+  borderRadius: 5,
+  [`&.${linearProgressClasses.colorPrimary}`]: {
+    backgroundColor:
+      theme.palette.grey[theme.palette.mode === 'light' ? 200 : 800],
+  },
+  [`& .${linearProgressClasses.bar}`]: {
+    borderRadius: 5,
+    backgroundColor: theme.palette.mode === 'light' ? '#1a90ff' : '#308fe8',
+  },
 }));
