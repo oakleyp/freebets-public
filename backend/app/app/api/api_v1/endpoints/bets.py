@@ -77,12 +77,20 @@ def read_bets(
     result_bet_strat_types = list(set([bet.bet_strategy_type for bet in all_bets]))
     result_bet_types = list(set([bet.bet_type for bet in all_bets]))
 
+    # TODO: Cache this (or make static)
+    all_track_codes = [race.track_code for race in db.query(Race).distinct(Race.track_code).all()]
+    all_bet_strat_types = [str(BetStrategyType[bet_strat_type.name]) for bet_strat_type in BetStrategyType]
+    all_bet_types = [str(BetType[bet_type.name]) for bet_type in BetType]
+
     return BetsQueryResponse(
         single_bets=single_bets,
         multi_bets=multi_bets,
         track_codes=result_track_codes,
         bet_strat_types=result_bet_strat_types,
         bet_types=result_bet_types,
+        all_track_codes=all_track_codes,
+        all_bet_strat_types=all_bet_strat_types,
+        all_bet_types=all_bet_types,
         limit=limit,
         skip=skip,
     )

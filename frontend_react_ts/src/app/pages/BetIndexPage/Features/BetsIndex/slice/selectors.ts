@@ -29,3 +29,8 @@ export const selectCurrentBetSearchParams = createSelector(
   [selectDomain],
   betIndexState => betIndexState.currentBetSearchParams,
 );
+
+export const selectAvailableFilterValues = createSelector(
+  [selectDomain],
+  betIndexState => betIndexState.availableFilterValues,
+);

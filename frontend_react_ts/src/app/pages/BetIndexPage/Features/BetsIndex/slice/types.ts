@@ -9,6 +9,7 @@ export const BET_LABELS = {
 export type BetsIndexState = {
   loading: boolean;
   error?: BetsErrorType | null;
+  availableFilterValues: AvailableBetFilterValues;
   currentBetSearchParams: BetSearchParams;
   currentBetList: BetList;
   selectedBet?: SingleBet | MultiBet | null;
@@ -25,6 +26,12 @@ export type BetSearchParams = {
   limit: number;
   skip: number;
   trackCodes: Array<string>;
+};
+
+export type AvailableBetFilterValues = {
+  trackCodes: string[];
+  betStratTypes: string[];
+  betTypes: string[];
 };
 
 export enum BetsErrorType {

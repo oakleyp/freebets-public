@@ -13,6 +13,7 @@ import {
   selectLoading,
   selectCurrentBetSearchParams,
   selectSelectedBet,
+  selectAvailableFilterValues,
 } from './slice/selectors';
 
 import { styled, useTheme } from '@mui/material/styles';
@@ -37,6 +38,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
+import Tooltip from '@mui/material/Tooltip';
 import Box from '@mui/material/Box';
 import headerImage from '../../assets/wow.gif';
 import LinearProgress, {
@@ -64,6 +66,7 @@ export function BetIndex() {
   const loading = useSelector(selectLoading);
   const error = useSelector(selectError);
   const currentBetSearchParams = useSelector(selectCurrentBetSearchParams);
+  const availableFilterValues = useSelector(selectAvailableFilterValues);
 
   const dispatch = useDispatch();
 
@@ -77,6 +80,7 @@ export function BetIndex() {
   });
 
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterStateDirty, setFilterStateDirty] = useState(false);
 
   // Local state to hold uncommitted filter changes
   const [betTypes, setBetTypes] = useState(
@@ -89,27 +93,40 @@ export function BetIndex() {
     currentBetSearchParams.trackCodes || [],
   );
 
+  // Wrapper for funcs where calling should signal a "dirty" filter state
+  // Potentially, this could be better solved by moving all state to redux and using
+  // its immutability advantages to do a quick compare of new/old state, rather than manually tracking
+  function stateMutWrapper(func) {
+    return function (...args) {
+      setFilterStateDirty(true);
+      return func(...args);
+    };
+  }
+
   useEffect(() => {
     setBetTypes(currentBetSearchParams.betTypes || []);
     setBetStrategies(currentBetSearchParams.betStratTypes || []);
     setTrackCodes(currentBetSearchParams.trackCodes || []);
   }, [currentBetSearchParams]);
 
-  // const handleTabClick = (evt: React.FormEvent<HTMLFormElement>, titleProps) => {
-  //   const { index } = titleProps;
-  //   const newIndex = activeIndex === index ? -1 : index;
+  const handleFilterSaveClick = () => {
+    dispatch(
+      actions.setBetSearchParams({
+        ...currentBetSearchParams,
+        betTypes,
+        betStratTypes: betStrategies,
+        trackCodes: trackCodes,
+      }),
+    );
+    setFilterStateDirty(false);
+  };
 
-  //   setActiveIndex(newIndex);
-  // };
-
-  // const handleFilterSaveClick = () => {
-  //   dispatch(actions.setBetSearchParams({
-  //     ...currentBetSearchParams,
-  //     betTypes,
-  //     betStratTypes: betStrategies,
-  //     trackCodes: trackCodes,
-  //   }));
-  // };
+  const handleFilterResetClick = () => {
+    setBetTypes(currentBetSearchParams.betTypes || []);
+    setBetStrategies(currentBetSearchParams.betStratTypes || []);
+    setTrackCodes(currentBetSearchParams.trackCodes || []);
+    setFilterStateDirty(false);
+  };
 
   const Loader = (
     <Box sx={{}}>
@@ -163,29 +180,37 @@ export function BetIndex() {
     return (
       <List>
         {[...bets.multiBets, ...bets.singleBets].map(bet => (
-          <BetListItem
-            component={Link}
-            href={`/bets/${bet.id}`}
-            target="_blank"
-          >
-            <ListItemAvatar>
-              <Avatar>{getBetIcon(bet)}</Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={getBetName(bet)}
-              secondary={
-                <>
-                  <Stack direction="row" spacing={1}>
-                    <span>{`Cost = $${bet.cost.toFixed(2)}`}</span>
-                    <span>{`Min Reward = $${bet.min_reward.toFixed(2)}`}</span>
-                    <span>{`Avg Reward = $${bet.avg_reward.toFixed(2)}`}</span>
-                    <span>{`Max Reward = $${bet.max_reward.toFixed(2)}`}</span>
-                  </Stack>
-                  {getTags(bet)}
-                </>
-              }
-            />
-          </BetListItem>
+          <Tooltip title="Open play in new tab">
+            <BetListItem
+              component={Link}
+              href={`/bets/${bet.id}`}
+              target="_blank"
+            >
+              <ListItemAvatar>
+                <Avatar>{getBetIcon(bet)}</Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={getBetName(bet)}
+                secondary={
+                  <>
+                    <Stack direction="row" spacing={1}>
+                      <span>{`Cost = $${bet.cost.toFixed(2)}`}</span>
+                      <span>{`Min Reward = $${bet.min_reward.toFixed(
+                        2,
+                      )}`}</span>
+                      <span>{`Avg Reward = $${bet.avg_reward.toFixed(
+                        2,
+                      )}`}</span>
+                      <span>{`Max Reward = $${bet.max_reward.toFixed(
+                        2,
+                      )}`}</span>
+                    </Stack>
+                    {getTags(bet)}
+                  </>
+                }
+              />
+            </BetListItem>
+          </Tooltip>
         ))}
       </List>
     );
@@ -248,15 +273,21 @@ export function BetIndex() {
           setOpen={setFilterOpen}
           filterStates={{
             betTypes: {
-              state: [betTypes, setBetTypes],
+              state: [betTypes, stateMutWrapper(setBetTypes)],
+              available: availableFilterValues.betTypes,
             },
             betStrategies: {
-              state: [betStrategies, setBetStrategies],
+              state: [betStrategies, stateMutWrapper(setBetStrategies)],
+              available: availableFilterValues.betStratTypes,
             },
             trackCodes: {
-              state: [trackCodes, setTrackCodes],
+              state: [trackCodes, stateMutWrapper(setTrackCodes)],
+              available: availableFilterValues.trackCodes,
             },
           }}
+          saveFilters={handleFilterSaveClick}
+          resetFilters={handleFilterResetClick}
+          filterStateDirty={filterStateDirty}
         />
         <Main open={filterOpen}>
           <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
