@@ -209,13 +209,13 @@ services:
   frontend_react:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
     build:
-      context: ./frontend_react
+      context: ./frontend_react_ts
       args:
         FRONTEND_ENV: ${FRONTEND_ENV-production}
     stdin_open: true
     volumes:
-      - './frontend_react:/app:cached'
-      - './frontend_react/node_modules:/app/node_modules:cached'
+      - './frontend_react_ts:/app:cached'
+      - './frontend_react_ts/node_modules:/app/node_modules:cached'
     deploy:
       labels:
         - traefik.enable=true
