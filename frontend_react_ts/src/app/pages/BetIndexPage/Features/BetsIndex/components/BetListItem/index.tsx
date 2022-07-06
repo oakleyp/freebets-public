@@ -9,13 +9,9 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import Tooltip from '@mui/material/Tooltip';
 import Link, { LinkProps } from '@mui/material/Link';
 import { AirplaneTicket, FileCopy } from '@mui/icons-material';
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
 import Chip from '@mui/material/Chip';
 import ListItemButton from '@mui/material/ListItemButton';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Toolbar from '@mui/material/Toolbar';
 import { PostTimer } from 'app/components/PostTimer';
 import { getEffectiveTS } from 'utils/bets';
 
