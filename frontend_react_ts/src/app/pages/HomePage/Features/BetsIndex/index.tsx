@@ -16,8 +16,10 @@ import {
 } from './slice/selectors';
 
 import { styled, useTheme } from '@mui/material/styles';
+import Collapse from '@mui/material/Collapse';
 import Grid from '@mui/material/Grid';
 import List from '@mui/material/List';
+import ListSubheader from '@mui/material/ListSubheader';
 import Drawer from '@mui/material/Drawer';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
@@ -40,16 +42,11 @@ import headerImage from '../../assets/wow.gif';
 import LinearProgress, {
   linearProgressClasses,
 } from '@mui/material/LinearProgress';
-
+import Link, { LinkProps } from '@mui/material/Link';
+import { FilterDrawer } from './components/FilterDrawer';
 import { useBetIndexSlice } from './slice';
 import { MultiBet, SingleBet } from 'types/Bet';
-import {
-  AirplaneTicket,
-  FileCopy,
-  Folder,
-  FolderCopy,
-  InsertDriveFile,
-} from '@mui/icons-material';
+import { AirplaneTicket, FileCopy } from '@mui/icons-material';
 import {
   Alert,
   AlertTitle,
@@ -59,7 +56,6 @@ import {
   Stack,
   Toolbar,
 } from '@mui/material';
-import { JsxChild, JsxElement, JsxExpression } from 'typescript';
 
 export function BetIndex() {
   const { actions } = useBetIndexSlice();
@@ -77,12 +73,10 @@ export function BetIndex() {
   };
 
   useEffectOnMount(() => {
-    console.log('loading');
     dispatch(actions.loadBets());
   });
 
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   // Local state to hold uncommitted filter changes
   const [betTypes, setBetTypes] = useState(
@@ -116,17 +110,6 @@ export function BetIndex() {
   //     trackCodes: trackCodes,
   //   }));
   // };
-
-  const panes = [
-    {
-      menuItem: "Today's Bets",
-      render: () => null,
-    },
-    {
-      menuItem: 'Upcoming',
-      render: () => null,
-    },
-  ];
 
   const Loader = (
     <Box sx={{}}>
@@ -180,7 +163,11 @@ export function BetIndex() {
     return (
       <List>
         {[...bets.multiBets, ...bets.singleBets].map(bet => (
-          <BetListItem>
+          <BetListItem
+            component={Link}
+            href={`/bets/${bet.id}`}
+            target="_blank"
+          >
             <ListItemAvatar>
               <Avatar>{getBetIcon(bet)}</Avatar>
             </ListItemAvatar>
@@ -189,10 +176,10 @@ export function BetIndex() {
               secondary={
                 <>
                   <Stack direction="row" spacing={1}>
-                    <span>{`Cost = ${bet.cost.toFixed(2)}`}</span>
-                    <span>{`Min Reward = ${bet.min_reward.toFixed(2)}`}</span>
-                    <span>{`Avg Reward = ${bet.avg_reward.toFixed(2)}`}</span>
-                    <span>{`Max Reward = ${bet.max_reward.toFixed(2)}`}</span>
+                    <span>{`Cost = $${bet.cost.toFixed(2)}`}</span>
+                    <span>{`Min Reward = $${bet.min_reward.toFixed(2)}`}</span>
+                    <span>{`Avg Reward = $${bet.avg_reward.toFixed(2)}`}</span>
+                    <span>{`Max Reward = $${bet.max_reward.toFixed(2)}`}</span>
                   </Stack>
                   {getTags(bet)}
                 </>
@@ -221,21 +208,13 @@ export function BetIndex() {
     return fn();
   }
 
-  const theme = useTheme();
-
-  const containerRef: MutableRefObject<Element | null> = useRef(null);
-
-  useEffect(() => {
-    console.log(containerRef.current);
-  }, [containerRef]);
-
-  const [filterOpen, setFilterOpen] = useState(false);
+  const drawerContainerRef: MutableRefObject<Element | null> = useRef(null);
 
   function betTable(bets: any) {
     return (
       <Box
         component={Paper}
-        ref={containerRef}
+        ref={drawerContainerRef}
         id="drawcontainer"
         sx={{ position: 'relative' }}
       >
@@ -254,7 +233,6 @@ export function BetIndex() {
               }}
               edge="start"
               sx={{ mr: 2, ...(filterOpen && { display: 'none' }) }}
-              // sx={{ mr: 2, ...{ display: 'none' } }}
             >
               <MenuIcon />
             </IconButton>
@@ -263,52 +241,23 @@ export function BetIndex() {
             </Typography>
           </Toolbar>
         </AppBar>
-        <Box
-          component="nav"
-          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-          aria-label="mailbox folders"
-        >
-          <Drawer
-            sx={{
-              width: drawerWidth,
-              flexShrink: 0,
-              '& .MuiDrawer-paper': {
-                width: drawerWidth,
-                boxSizing: 'border-box',
-                position: 'absolute',
-              },
-            }}
-            container={containerRef.current}
-            variant="persistent"
-            anchor="left"
-            open={filterOpen}
-          >
-            <DrawerHeader>
-              <IconButton onClick={() => setFilterOpen(false)}>
-                {theme.direction === 'ltr' ? (
-                  <ChevronLeftIcon />
-                ) : (
-                  <ChevronRightIcon />
-                )}
-              </IconButton>
-            </DrawerHeader>
-            <Divider />
-            <List>
-              {['Inbox', 'Starred', 'Send email', 'Drafts'].map(
-                (text, index) => (
-                  <ListItem key={text} disablePadding>
-                    <ListItemButton>
-                      <ListItemIcon>
-                        {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                      </ListItemIcon>
-                      <ListItemText primary={text} />
-                    </ListItemButton>
-                  </ListItem>
-                ),
-              )}
-            </List>
-          </Drawer>
-        </Box>
+        <FilterDrawer
+          containerRef={drawerContainerRef}
+          width={drawerWidth}
+          open={filterOpen}
+          setOpen={setFilterOpen}
+          filterStates={{
+            betTypes: {
+              state: [betTypes, setBetTypes],
+            },
+            betStrategies: {
+              state: [betStrategies, setBetStrategies],
+            },
+            trackCodes: {
+              state: [trackCodes, setTrackCodes],
+            },
+          }}
+        />
         <Main open={filterOpen}>
           <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
         </Main>
@@ -328,7 +277,9 @@ const ListContainer = styled('div')(({ theme }) => ({
   padding: '0 0.2em',
 }));
 
-const BetListItem = styled(ListItemButton)(({ theme, ...props }) => ({
+const BetListItem = styled(ListItemButton)<
+  LinkProps & { component?: React.ElementType }
+>(({ theme, ...props }) => ({
   paddingTop: '8px',
   paddingBottom: '16px',
   border: '1px solid',
@@ -384,15 +335,6 @@ const AppBar = styled(MuiAppBar, {
       duration: theme.transitions.duration.enteringScreen,
     }),
   }),
-}));
-
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
 }));
 
 const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({

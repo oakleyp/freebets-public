@@ -24,8 +24,8 @@ export type BaseBet = {
 };
 
 export type SingleBet = BaseBet & {
-  active_entries: Object[];
-  inactive_entries: Object[];
+  active_entries: any[];
+  inactive_entries: any[];
 };
 
 export type MultiBet = BaseBet & {

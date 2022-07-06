@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet-async';
 import Grid from '@mui/material/Grid';
 import { Copyright } from 'app/components/Copyright';
 import { PageWrapper } from 'app/components/PageWrapper';
-import headerImage from './assets/wow.gif';
 
 export function HomePage() {
   return (

@@ -10,7 +10,7 @@ import Container from '@mui/material/Container';
 import MenuIcon from '@mui/icons-material/Menu';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Avatar from '@mui/material/Avatar';
+// import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useThemeSlice } from 'styles/theme/slice';
 import { selectThemeKey } from 'styles/theme/slice/selectors';
 import { DarkMode, LightMode } from '@mui/icons-material';
+import { saveTheme } from 'styles/theme/utils';
 
 const pages = [];
 const settings = ['Account', 'Logout'];
@@ -42,9 +43,11 @@ export function PageWrapper({ children }: Props) {
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
   };
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
-  };
+
+  // TODO: Users not in use yet
+  // const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+  //   setAnchorElUser(event.currentTarget);
+  // };
 
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
@@ -54,12 +57,25 @@ export function PageWrapper({ children }: Props) {
     setAnchorElUser(null);
   };
 
-  const darkModeIcon =
-    currentTheme === 'dark' ? (
-      <LightMode onClick={() => dispatch(actions.changeTheme('light'))} />
-    ) : (
-      <DarkMode onClick={() => dispatch(actions.changeTheme('dark'))} />
-    );
+  const currentThemePropMap = {
+    dark: {
+      displayIcon: <LightMode />,
+      displayIconClick: () => {
+        dispatch(actions.changeTheme('light'));
+        saveTheme('light');
+      },
+    },
+    light: {
+      displayIcon: <DarkMode />,
+      displayIconClick: () => {
+        dispatch(actions.changeTheme('dark'));
+        saveTheme('dark');
+      },
+    },
+  };
+
+  const currentThemeProps =
+    currentThemePropMap[currentTheme] || currentThemePropMap.light;
 
   return (
     <>
@@ -83,7 +99,7 @@ export function PageWrapper({ children }: Props) {
               Freebets
             </Typography>
 
-            <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
+            {/* <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
               <IconButton
                 size="large"
                 aria-label="account of current user"
@@ -118,7 +134,7 @@ export function PageWrapper({ children }: Props) {
                   </MenuItem>
                 ))}
               </Menu>
-            </Box>
+            </Box> */}
             <Typography
               variant="h5"
               noWrap
@@ -128,7 +144,7 @@ export function PageWrapper({ children }: Props) {
                 mr: 2,
                 display: { xs: 'flex', md: 'none' },
                 flexGrow: 1,
-                letterSpacing: '.3rem',
+                // letterSpacing: '.3rem',
                 color: 'inherit',
                 textDecoration: 'none',
               }}
@@ -150,8 +166,13 @@ export function PageWrapper({ children }: Props) {
             <Box sx={{ flexGrow: 0 }}>
               <Stack direction="row" spacing={1}>
                 <Tooltip title="Toggle dark mode">
-                  <IconButton color="inherit">
-                    <Badge color="secondary">{darkModeIcon}</Badge>
+                  <IconButton
+                    color="inherit"
+                    onClick={currentThemeProps.displayIconClick}
+                  >
+                    <Badge color="secondary">
+                      {currentThemeProps.displayIcon}
+                    </Badge>
                   </IconButton>
                 </Tooltip>
                 {/* <Tooltip title="Open settings">
