@@ -12,6 +12,11 @@ export const initialState: BetsIndexState = {
   },
   loading: false,
   error: null,
+  availableFilterValues: {
+    trackCodes: [],
+    betTypes: [],
+    betStratTypes: [],
+  },
   currentBetSearchParams: {
     betTypes: null,
     betStratTypes: null,
@@ -39,6 +44,9 @@ const slice = createSlice({
       state.currentBetSearchParams.trackCodes = resp.track_codes;
       state.currentBetSearchParams.limit = resp.limit;
       state.currentBetSearchParams.skip = resp.skip;
+      state.availableFilterValues.trackCodes = resp.all_track_codes;
+      state.availableFilterValues.betTypes = resp.all_bet_types;
+      state.availableFilterValues.betStratTypes = resp.all_bet_strat_types;
       state.loading = false;
     },
     betsLoadingError(state, action: PayloadAction<BetsErrorType>) {

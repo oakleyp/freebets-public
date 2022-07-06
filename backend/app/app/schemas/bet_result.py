@@ -74,6 +74,9 @@ class BetsQueryResponse(BaseModel):
     skip: int
     bet_types: List[str]
     bet_strat_types: List[str]
+    all_bet_strat_types: List[str]
+    all_bet_types: List[str]
+    all_track_codes: List[str]
 
 
 class BetGetResponse(BaseModel):
