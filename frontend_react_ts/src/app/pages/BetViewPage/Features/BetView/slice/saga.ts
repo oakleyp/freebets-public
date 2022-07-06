@@ -8,7 +8,7 @@ import { BetViewErrorType } from './types';
 
 export function* getBet() {
   const betId = yield select(selectBetId);
-  const requestURL = `http://${process.env.REACT_APP_API_URL}/api/v1/bets/${betId}`;
+  const requestURL = `${process.env.REACT_APP_API_URL}/api/v1/bets/${betId}`;
 
   try {
     // Call our request helper (see 'utils/request')
