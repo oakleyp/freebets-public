@@ -5,7 +5,7 @@ import Grid from '@mui/material/Grid';
 import { Copyright } from 'app/components/Copyright';
 import { PageWrapper } from 'app/components/PageWrapper';
 
-export function HomePage() {
+export function BetIndexPage() {
   return (
     <>
       <Helmet>
