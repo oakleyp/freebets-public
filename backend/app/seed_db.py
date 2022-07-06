@@ -2,11 +2,25 @@ from typing import List
 from app.db.session import SessionLocal
 from app.models.bet import Bet
 from app.models.race import Race
+from app.models.race_entry import RaceEntry
 from app.tests.utils.race_data import create_track_with_race_and_starter_details_n
 from app.raceday.race_canonical import LiveTrackExtendedCanonical
 from app.raceday.bet_strategy.generator import BetGen
 from app.raceday.bet_strategy.bet_tagger import BetTagger
 from sqlalchemy.orm import Session
+
+def clear_all():
+    db: Session = SessionLocal()
+
+     # Clear bets
+    db.query(Bet).delete()
+    # Clear races and entries
+    db.query(RaceEntry).delete()
+    db.query(Race).delete()
+
+    db.commit()
+
+    db.close()
 
 def seed_all():
     db: Session = SessionLocal()
@@ -38,7 +52,7 @@ def seed_all():
             db.add(bet_db)
 
     db.commit()
-
+    db.close()
             
 
 

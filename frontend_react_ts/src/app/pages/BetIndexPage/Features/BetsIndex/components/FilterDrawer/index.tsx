@@ -32,7 +32,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 }));
 
 interface FilterDrawerProps {
-  width: number;
+  width: string;
   open: boolean;
   setOpen: Function;
   containerRef: MutableRefObject<Element | null>;
@@ -40,6 +40,29 @@ interface FilterDrawerProps {
   saveFilters: Function;
   resetFilters: Function;
   filterStateDirty: boolean;
+}
+
+const betStratTypeDisplayMap = {
+  AI_ALL_WIN_ARB: '(AI) All Win',
+  AI_BOX_WIN_ARB: '(AI) Box Win',
+  AI_WIN_BET: '(AI) Win',
+  BOOK_ALL_WIN_ARB: '(Book) All Win',
+  BOOK_BOX_WIN_ARB: '(Book) Box Win',
+  BOOK_WIN_BET: '(Book) Win',
+};
+
+const betTypeDisplayMap = {
+  ALL_WIN_ARB: 'All Win',
+  BOX_WIN_ARB: 'Box Win',
+  WIN_BET: 'Win',
+};
+
+function getBetStratTypeDisplay(val: string): string {
+  return betStratTypeDisplayMap[val] || val;
+}
+
+function getBetTypeDisplay(val: string): string {
+  return betTypeDisplayMap[val] || val;
 }
 
 export function FilterDrawer({
@@ -61,7 +84,7 @@ export function FilterDrawer({
       filterState: filterStates.betTypes.state[0],
       setFilterState: filterStates.betTypes.state[1],
       availableFilterValues: filterStates.betTypes.available,
-      valueDecorator: val => val,
+      valueDecorator: val => getBetTypeDisplay(val.replace('BetType.', '')),
     },
     betStrategies: {
       label: 'Bet Strategy Types',
@@ -69,7 +92,8 @@ export function FilterDrawer({
       filterState: filterStates.betStrategies.state[0],
       setFilterState: filterStates.betStrategies.state[1],
       availableFilterValues: filterStates.betStrategies.available,
-      valueDecorator: val => val,
+      valueDecorator: val =>
+        getBetStratTypeDisplay(val.replace('BetStrategyType.', '')),
     },
     trackCodes: {
       label: 'Tracks',
@@ -179,13 +203,24 @@ export function FilterDrawer({
                 unmountOnExit
               >
                 <List component="div" disablePadding>
-                  <ListItemButton sx={{ pl: 4 }}>
-                    <Stack direction="column" spacing={1}>
+                  <ListItemText sx={{ pl: 4 }}>
+                    <Stack
+                      direction="column"
+                      spacing={1}
+                      sx={{ maxWidth: '100%' }}
+                    >
                       {[...filterTypes[filterType].availableFilterValues]
-                        .sort((a, b) => a.localeCompare(b))
+                        .sort((a, b) =>
+                          filterTypes[filterType]
+                            .valueDecorator(a)
+                            .localeCompare(
+                              filterTypes[filterType].valueDecorator(b),
+                            ),
+                        )
                         .map(value => (
                           <FormGroup key={`${filterType}-${value}-checked`}>
                             <FormControlLabel
+                              sx={{ maxWidth: '100%', wordBreak: 'break-word' }}
                               control={
                                 <Switch
                                   checked={filterTypes[
@@ -203,7 +238,7 @@ export function FilterDrawer({
                           </FormGroup>
                         ))}
                     </Stack>
-                  </ListItemButton>
+                  </ListItemText>
                 </List>
               </Collapse>
             </React.Fragment>
