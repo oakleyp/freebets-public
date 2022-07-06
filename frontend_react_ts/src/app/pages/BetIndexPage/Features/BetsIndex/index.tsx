@@ -1,63 +1,33 @@
-import React, {
-  useState,
-  memo,
-  useEffect,
-  useRef,
-  MutableRefObject,
-} from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect, useRef, MutableRefObject } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   selectBets,
   selectError,
   selectLoading,
   selectCurrentBetSearchParams,
-  selectSelectedBet,
   selectAvailableFilterValues,
 } from './slice/selectors';
 
-import { styled, useTheme } from '@mui/material/styles';
-import Collapse from '@mui/material/Collapse';
-import Grid from '@mui/material/Grid';
+import { styled } from '@mui/material/styles';
 import List from '@mui/material/List';
-import ListSubheader from '@mui/material/ListSubheader';
-import Drawer from '@mui/material/Drawer';
-import ListItem from '@mui/material/ListItem';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import FolderIcon from '@mui/icons-material/Folder';
-import CircularProgress from '@mui/material/CircularProgress';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
-import Divider from '@mui/material/Divider';
 import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import MailIcon from '@mui/icons-material/Mail';
-import Tooltip from '@mui/material/Tooltip';
 import Box from '@mui/material/Box';
 import headerImage from '../../assets/wow.gif';
 import LinearProgress, {
   linearProgressClasses,
 } from '@mui/material/LinearProgress';
-import Link, { LinkProps } from '@mui/material/Link';
 import { FilterDrawer } from './components/FilterDrawer';
 import { useBetIndexSlice } from './slice';
-import { MultiBet, SingleBet } from 'types/Bet';
-import { AirplaneTicket, FileCopy } from '@mui/icons-material';
-import {
-  Alert,
-  AlertTitle,
-  Chip,
-  ListItemButton,
-  Paper,
-  Stack,
-  Toolbar,
-} from '@mui/material';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+import Paper from '@mui/material/Paper';
+import Toolbar from '@mui/material/Toolbar';
+import { BetsErrorType } from './slice/types';
+import { BetListItem } from './components/BetListItem';
+import { getEffectiveTS } from 'utils/bets';
 
 export function BetIndex() {
   const { actions } = useBetIndexSlice();
@@ -93,9 +63,9 @@ export function BetIndex() {
     currentBetSearchParams.trackCodes || [],
   );
 
-  // Wrapper for funcs where calling should signal a "dirty" filter state
+  // Wrapper for funcs where calling should signify a "dirty" filter state;
   // Potentially, this could be better solved by moving all state to redux and using
-  // its immutability advantages to do a quick compare of new/old state, rather than manually tracking
+  // its immutability advantages to do a quick compare of new/old state, rather than manually tracking.
   function stateMutWrapper(func) {
     return function (...args) {
       setFilterStateDirty(true);
@@ -135,83 +105,14 @@ export function BetIndex() {
     </Box>
   );
 
-  function getBetIcon(bet: any): any {
-    if (bet.sub_bets) {
-      return <FileCopy />;
-    }
-
-    return <AirplaneTicket />;
-  }
-
-  function getBetName(bet: any): any {
-    if (bet.sub_bets) {
-      const uniqTrackCodes = [
-        ...new Set(bet.sub_bets.map(bet => bet.race.track_code.toUpperCase())),
-      ].join(' | ');
-
-      return `(MULTI) ${uniqTrackCodes}`;
-    }
-
-    return bet.race.track_code.toUpperCase();
-  }
-
-  const tagColorMap = {
-    'good value': 'primary',
-    free: 'warning',
-  };
-
-  function tagColor(tagName: string) {
-    return tagColorMap[tagName];
-  }
-
-  function getTags(bet: any): any {
-    return (
-      <TagsContainer>
-        <Stack direction="row" spacing={1}>
-          {bet.tags.map(tag => (
-            <Chip label={tag.name} color={tagColor(tag.name.toLowerCase())} />
-          ))}
-        </Stack>
-      </TagsContainer>
-    );
-  }
-
   function listBets(bets: any) {
     return (
       <List>
-        {[...bets.multiBets, ...bets.singleBets].map(bet => (
-          <Tooltip title="Open play in new tab">
-            <BetListItem
-              component={Link}
-              href={`/bets/${bet.id}`}
-              target="_blank"
-            >
-              <ListItemAvatar>
-                <Avatar>{getBetIcon(bet)}</Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={getBetName(bet)}
-                secondary={
-                  <>
-                    <Stack direction="row" spacing={1}>
-                      <span>{`Cost = $${bet.cost.toFixed(2)}`}</span>
-                      <span>{`Min Reward = $${bet.min_reward.toFixed(
-                        2,
-                      )}`}</span>
-                      <span>{`Avg Reward = $${bet.avg_reward.toFixed(
-                        2,
-                      )}`}</span>
-                      <span>{`Max Reward = $${bet.max_reward.toFixed(
-                        2,
-                      )}`}</span>
-                    </Stack>
-                    {getTags(bet)}
-                  </>
-                }
-              />
-            </BetListItem>
-          </Tooltip>
-        ))}
+        {[...bets.multiBets, ...bets.singleBets]
+          .sort((a, b) => getEffectiveTS(b) - getEffectiveTS(a))
+          .map(bet => (
+            <BetListItem bet={bet} key={`betitem-${bet.id}`} />
+          ))}
       </List>
     );
   }
@@ -222,6 +123,15 @@ export function BetIndex() {
     }
 
     if (error) {
+      if (error === BetsErrorType.NO_BETS_ERROR) {
+        return (
+          <Alert severity="info">
+            <AlertTitle>No bets to display</AlertTitle>
+            The current search returned no bets.
+          </Alert>
+        );
+      }
+
       return (
         <Alert severity="error">
           <AlertTitle>Something went wrong...</AlertTitle>
@@ -304,29 +214,15 @@ const ListContainer = styled('div')(({ theme }) => ({
   color: theme.palette.text.primary,
   overflowY: 'auto',
   maxHeight: '60vh',
-  marginLeft: `${drawerWidth}px`,
+  marginLeft: `${drawerWidth}`,
   padding: '0 0.2em',
-}));
-
-const BetListItem = styled(ListItemButton)<
-  LinkProps & { component?: React.ElementType }
->(({ theme, ...props }) => ({
-  paddingTop: '8px',
-  paddingBottom: '16px',
-  border: '1px solid',
-  margin: '0.5em 0',
-  borderRadius: '5px',
 }));
 
 const ListHeader = styled(Typography)(({ theme, ...props }) => ({
   color: theme.palette.text.primary,
 }));
 
-const TagsContainer = styled('div')(({ theme, ...props }) => ({
-  paddingTop: '0.4em',
-}));
-
-const drawerWidth = 240;
+const drawerWidth = '10vw';
 
 const Main = styled('main', { shouldForwardProp: prop => prop !== 'open' })<{
   open?: boolean;
@@ -337,7 +233,7 @@ const Main = styled('main', { shouldForwardProp: prop => prop !== 'open' })<{
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
-  marginLeft: `-${drawerWidth}px`,
+  marginLeft: `-${drawerWidth}`,
   ...(open && {
     transition: theme.transitions.create('margin', {
       easing: theme.transitions.easing.easeOut,
@@ -359,8 +255,8 @@ const AppBar = styled(MuiAppBar, {
     duration: theme.transitions.duration.leavingScreen,
   }),
   ...(open && {
-    width: `calc(100% - ${drawerWidth}px)`,
-    marginLeft: `${drawerWidth}px`,
+    width: `calc(100% - ${drawerWidth})`,
+    marginLeft: `${drawerWidth}`,
     transition: theme.transitions.create(['margin', 'width'], {
       easing: theme.transitions.easing.easeOut,
       duration: theme.transitions.duration.enteringScreen,
