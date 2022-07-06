@@ -40,6 +40,9 @@ export interface BetsListResponse {
   track_codes: string[];
   bet_types: string[];
   bet_strat_types: BetStratType[];
+  all_track_codes: string[];
+  all_bet_strat_types: BetStratType[];
+  all_bet_types: string[];
 }
 
 export interface BetViewResponse {

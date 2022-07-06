@@ -25,22 +25,26 @@ export function SingleBetView({ bet }: Props) {
   return (
     <>
       <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <EntriesTable rows={bet.active_entries} title="Active Entries" />
+        </Grid>
         <Grid item xs={6}>
-          <Paper sx={{ height: '100%' }}>
+          <Paper sx={{}}>
             <Toolbar
               sx={{
                 pl: { sm: 2 },
                 pr: { xs: 1, sm: 1 },
+                minHeight: '3em !important',
                 ...{
-                  bgcolor: theme => theme.palette.secondary.dark,
-                  color: theme => theme.palette.secondary.contrastText,
+                  bgcolor: theme => theme.palette.primary.main,
+                  color: theme => theme.palette.primary.contrastText,
                 },
               }}
             >
               <Typography
-                sx={{ flex: '1 1 100%', padding: '0.5em' }}
+                sx={{ flex: '1 1 100%' }}
+                color="inherit"
                 variant="subtitle1"
-                id="tableTitle"
                 component="div"
               >
                 Race Details
@@ -94,14 +98,15 @@ export function SingleBetView({ bet }: Props) {
               sx={{
                 pl: { sm: 2 },
                 pr: { xs: 1, sm: 1 },
-                bgcolor: theme => theme.palette.secondary.dark,
-                color: theme => theme.palette.secondary.contrastText,
+                minHeight: '3em !important',
+                bgcolor: theme => theme.palette.primary.main,
+                color: theme => theme.palette.primary.contrastText,
               }}
             >
               <Typography
-                sx={{ flex: '1 1 100%', padding: '0.5em' }}
+                sx={{ flex: '1 1 100%' }}
+                color="inherit"
                 variant="subtitle1"
-                id="tableTitle"
                 component="div"
               >
                 Bet Details
@@ -178,9 +183,6 @@ export function SingleBetView({ bet }: Props) {
           </Paper>
         </Grid>
       </Grid>
-      <Box sx={{ marginTop: '2em' }}>
-        <EntriesTable rows={bet.active_entries} title="Active Entries" />
-      </Box>
     </>
   );
 }

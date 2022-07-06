@@ -185,15 +185,16 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
       sx={{
         pl: { sm: 2 },
         pr: { xs: 1, sm: 1 },
-        bgcolor: theme => theme.palette.secondary.dark,
-        color: theme => theme.palette.secondary.contrastText,
+        minHeight: '3em !important',
+        bgcolor: theme => theme.palette.primary.main,
+        color: theme => theme.palette.primary.contrastText,
         ...(numSelected > 0 && {
           bgcolor: theme =>
             alpha(
               theme.palette.primary.main,
               theme.palette.action.activatedOpacity,
             ),
-          //   color: theme => theme.palette.primary.contrastText,
+          color: theme => theme.palette.secondary.contrastText,
         }),
       }}
     >
