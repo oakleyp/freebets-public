@@ -24,7 +24,7 @@ export function* getBetsList() {
 
   // TODO op use env url base
   const reqUrl =
-    `http://${process.env.REACT_APP_API_URL}/api/v1/bets?` +
+    `${process.env.REACT_APP_API_URL}/api/v1/bets?` +
     Object.entries(paramMapping)
       .reduce(
         (tokenlist: string[], [token, val]) =>
