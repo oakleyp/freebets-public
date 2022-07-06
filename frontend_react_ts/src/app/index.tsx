@@ -12,7 +12,7 @@ import { Switch, Route, BrowserRouter } from 'react-router-dom';
 
 import { GlobalStyle } from 'styles/global-styles';
 
-import { HomePage } from './pages/HomePage/Loadable';
+import { BetIndexPage } from './pages/BetIndexPage/Loadable';
 import { NotFoundPage } from './components/NotFoundPage/Loadable';
 import { BetViewPage } from './pages/BetViewPage/Loadable';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +33,7 @@ export function App() {
       </Helmet>
 
       <Switch>
-        <Route exact path="/" component={HomePage} />
+        <Route exact path="/" component={BetIndexPage} />
         <Route exact path="/bets/:betId" component={BetViewPage} />
         <Route component={NotFoundPage} />
       </Switch>
