@@ -73,12 +73,16 @@ def read_bets(
         else:
             multi_bets.append(bet_conv.create_multi_bet_result(bet))
 
+    result_track_codes = list(set([bet.race.track_code for bet in all_bets]))
+    result_bet_strat_types = list(set([bet.bet_strategy_type for bet in all_bets]))
+    result_bet_types = list(set([bet.bet_type for bet in all_bets]))
+
     return BetsQueryResponse(
         single_bets=single_bets,
         multi_bets=multi_bets,
-        track_codes=track_codes,
-        bet_strat_types=bet_strat_types,
-        bet_types=bet_types,
+        track_codes=result_track_codes,
+        bet_strat_types=result_bet_strat_types,
+        bet_types=result_bet_types,
         limit=limit,
         skip=skip,
     )

@@ -49,7 +49,7 @@ export function BetView(props: Props) {
   }, [betId, actions, dispatch]);
 
   let content = (
-    <Box>
+    <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
       <CircularProgress />
     </Box>
   );
