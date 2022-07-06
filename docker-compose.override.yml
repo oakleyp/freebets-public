@@ -84,7 +84,7 @@ services:
 
   frontend_react:
     build:
-      context: ./frontend_react
+      context: ./frontend_react_ts
       args:
         FRONTEND_ENV: development
     labels:
