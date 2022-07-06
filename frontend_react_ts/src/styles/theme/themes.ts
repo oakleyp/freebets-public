@@ -4,10 +4,10 @@ const lightTheme: MUITheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#3f51b5',
+      main: '#478ca8',
     },
     secondary: {
-      main: '#f50057',
+      main: '#33dcb8',
     },
   },
 });
@@ -16,10 +16,11 @@ const darkTheme: MUITheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#3f51b5',
+      main: '#478ca8',
+      contrastText: '#fff',
     },
     secondary: {
-      main: '#f50057',
+      main: '#33dcb8',
     },
   },
 });
