@@ -14,6 +14,9 @@ from app.lib.schemas.live_racing import (
     TrackWithRaceDetails,
 )
 from app.tests.utils.utils import random_datetime_in_range, random_lower_string
+from wonderwords import RandomWord
+
+rand_word = RandomWord()
 
 
 def create_uniform_range_for_time_unit(n: int, unit: str) -> List[float]:
@@ -224,7 +227,7 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         programNumber=str(horse_num),
         sortableProgramNumber=horse_num,
         bettingInterest=random.randint(0, 12),
-        name=random_lower_string(),
+        name=rand_word.random_words(2, include_parts_of_speech=['noun', 'adjective']),
         oddsTrend=None,
         oddsRank=random.randint(0, 12),
         yob=str(random.randint(2010, 2022)),

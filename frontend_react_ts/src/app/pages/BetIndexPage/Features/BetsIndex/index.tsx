@@ -52,6 +52,13 @@ export function BetIndex() {
   const nextRefreshTs = useSelector(selectNextRefreshTs);
   const countdownRefreshEnabled = useSelector(selectCountdownRefreshEnabled);
 
+  const now = dayjs().utc();
+  const nowMillis = now.unix() * 1000;
+  const hasRefreshExpired = nextRefreshTs && nextRefreshTs > nowMillis;
+  const effectiveNextRefreshTs = hasRefreshExpired
+    ? nextRefreshTs
+    : now.add(10, 'minute').unix() * 1000;
+
   const dispatch = useDispatch();
 
   const useEffectOnMount = (effect: React.EffectCallback) => {
@@ -232,10 +239,7 @@ export function BetIndex() {
                     <Skeleton width={80} />
                   ) : (
                     <CountdownTimer
-                      timeMillis={
-                        nextRefreshTs ||
-                        dayjs().utc().add(10, 'minute').unix() * 1000
-                      }
+                      timeMillis={effectiveNextRefreshTs}
                       onEnd={() =>
                         !loading &&
                         countdownRefreshEnabled &&
@@ -254,6 +258,7 @@ export function BetIndex() {
                 edge="end"
                 sx={{ mr: 1, flex: 0 }}
                 disabled={loading}
+                onClick={() => dispatch(actions.loadBets())}
                 size="small"
               >
                 <RefreshIcon />

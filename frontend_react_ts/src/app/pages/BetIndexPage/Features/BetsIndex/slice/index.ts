@@ -59,6 +59,7 @@ const slice = createSlice({
       state.nextRefreshTs = null;
       state.loading = false;
       state.countdownRefreshEnabled = false;
+      state.currentBetSearchParams = initialState.currentBetSearchParams;
     },
     setBetSearchParams(state, action: PayloadAction<BetSearchParams>) {
       state.currentBetSearchParams = action.payload;

@@ -188,7 +188,6 @@ class RaceDayProcessor:
                 )
                 sleep_time = self.max_sleep_secs
 
-            logger.debug("Adding sleep time %s - %s - %s", datetime.now(timezone.utc), sleep_time, (datetime.now(timezone.utc) + timedelta(seconds=sleep_time)).isoformat())
             self._log_complete(time_context, proc_result.races, proc_result.bets, datetime.now(timezone.utc) + timedelta(seconds=sleep_time), True)
             self._log_and_sleep(sleep_time)
 
@@ -320,11 +319,29 @@ class RaceDayProcessor:
             Remove all watchers from watching_races where
             the next_check_time is None.
         """
+        races_to_remove: List[int] = []
+
         for (id, watcher) in self.watching_races.copy().items():
             nct = self.next_check_gen.get_next_check_time(watcher, time_context)
 
             if nct is None:
                 del self.watching_races[id]
+                races_to_remove.append(id)
+
+            existing_race_bets = (
+                self.db.query(Bet).filter(Bet.race.has(Race.id == id)).all()
+            )
+
+            for bet in existing_race_bets:
+                self.db.delete(bet)
+
+        self.db.commit()
+
+        races = self.db.query(Race).filter(Race.id.in_(races_to_remove)).all()
+        for race in races:
+            self.db.delete(race)
+
+        self.db.commit()
 
     def _get_races_in_time_context(self, time_context: TimeContext) -> List[Race]:
         """Get all races in the active time context."""
