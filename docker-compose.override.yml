@@ -87,6 +87,11 @@ services:
       context: ./frontend_react_ts
       args:
         FRONTEND_ENV: development
+    # In theory this could be used to cache heavy parts of the app,
+    # if build times are an issue in dev.
+    # volumes:
+    #   - './frontend_react_ts:/src:cached'
+    #   - './frontend_react_ts/node_modules:/app/node_modules:cached'
     labels:
       - traefik.enable=true
       - traefik.constraint-label-stack=${TRAEFIK_TAG?Variable not set}
