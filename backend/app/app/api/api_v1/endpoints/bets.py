@@ -32,6 +32,7 @@ DEFAULT_BET_TYPES = list(
 
 
 @router.get("/", response_model=schemas.BetsQueryResponse)
+@router.get("", response_model=schemas.BetsQueryResponse, include_in_schema=False)
 def read_bets(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
