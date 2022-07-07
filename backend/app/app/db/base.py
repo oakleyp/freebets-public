@@ -5,3 +5,4 @@ from app.models.bet import Bet  # noqa
 from app.models.bet_tag import BetTag  # noqa
 from app.models.item import Item  # noqa
 from app.models.user import User  # noqa
+from app.models.raceday_refresh_log import RaceDayRefreshLog # noqa

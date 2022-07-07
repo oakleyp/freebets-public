@@ -3,6 +3,10 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from time import sleep
 from typing import Dict, List, Optional, Union
+from app.lib.clients.demo_live_racing_client import DemoLiveRacingClient
+from app.raceday.processor_logger import RaceDayProcessorLogger
+from app.raceday.processor_result import ProcessOnceResult
+from app.core.config import settings
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -125,7 +129,7 @@ class RaceDayProcessor:
         lookahead_limit: timedelta = timedelta(days=1),
         race_refresh_interval: timedelta = timedelta(days=0, minutes=10),
         next_check_gen: NextCheckGen = DefaultNextCheckGen(),
-        max_sleep_secs: float = 60 * 10,
+        max_sleep_secs: float = float(settings.MAX_SLEEP_TIME_SECS),
         max_bets_per_race: int = 1000,
         resilient: bool = True,
     ) -> None:
@@ -142,9 +146,10 @@ class RaceDayProcessor:
 
         self.watching_races: Dict[int, RaceWatcher] = {}
 
-        self.live_race_client: AbstractLiveRacingClient = LiveRacingClient()
+        self.live_race_client: AbstractLiveRacingClient = DemoLiveRacingClient()
         self.live_race_crawler = LiveRacingCrawler(self.live_race_client)
         self.bet_tagger = BetTagger(self.db)
+        self.proc_logger = RaceDayProcessorLogger(self.db)
 
         self.race_predictor = RacePredictor()
 
@@ -161,23 +166,21 @@ class RaceDayProcessor:
         self._clean_db(time_context)
 
         while True:
+            time_context = self._active_time_context()
+
             try:
-                time_context = self._active_time_context()
-                next_nct = self.process_once(time_context)
+                proc_result = self.process_once(time_context)
             except RaceDayProcessorException as e:
                 logger.exception(
                     "process_once() encountered an error (%s).", e, stack_info=True
                 )
+                self._log_complete(time_context, [], [], datetime.now(timezone.utc) + timedelta(seconds=self.max_sleep_secs), False)
                 self._log_and_sleep(self.max_sleep_secs)
                 continue
 
-            if not next_nct:
-                logger.info("No upcoming nct within configured time context.")
-                self._log_and_sleep(self.max_sleep_secs)
-
             # Sleep for either the max_sleep time or the soonest nct,
             # whichever is smallest
-            sleep_time = min(self.max_sleep_secs, next_nct)
+            sleep_time = min(self.max_sleep_secs, proc_result.next_check_secs)
 
             if sleep_time < 0:
                 logger.error(
@@ -185,9 +188,11 @@ class RaceDayProcessor:
                 )
                 sleep_time = self.max_sleep_secs
 
+            logger.debug("Adding sleep time %s - %s - %s", datetime.now(timezone.utc), sleep_time, (datetime.now(timezone.utc) + timedelta(seconds=sleep_time)).isoformat())
+            self._log_complete(time_context, proc_result.races, proc_result.bets, datetime.now(timezone.utc) + timedelta(seconds=sleep_time), True)
             self._log_and_sleep(sleep_time)
 
-    def process_once(self, time_context: TimeContext) -> Optional[float]:
+    def process_once(self, time_context: TimeContext) -> ProcessOnceResult:
         """
             Run a single cycle of the race ingest and bet generation process.
             Returns the number of seconds until the soonest next_check_time,
@@ -199,6 +204,10 @@ class RaceDayProcessor:
             f"{time_context.lookahead_start.isoformat()} -> "
             f"{time_context.lookahead_end.isoformat()}"
         )
+
+        result_bets: List[Bet] = []
+        result_races: List[Race] = []
+        result_ncs: float = 0
 
         try:
             self._ingest_races_shallow(time_context)
@@ -220,12 +229,16 @@ class RaceDayProcessor:
                 logger.exception(
                     "Failed to ingest race entries for %s", race, stack_info=True
                 )
+
+                self.db.delete(race)
+                self._del_watcher(race)
+
                 if not self.resilient:
                     raise FailedRaceEntryIngestException
 
-                self._del_watcher(race)
-
                 continue
+
+            result_races.append(race)
 
             self._update_watcher(race, time_context)
 
@@ -233,12 +246,17 @@ class RaceDayProcessor:
             self._refresh_race_predictions(race)
 
             logger.debug("Regenerating bets for race %s", race)
-            self._refresh_race_bets(race)
+            created_bets = self._refresh_race_bets(race)
+            result_bets.extend(created_bets)
 
         min_nct = self._get_min_watcher_nct()
-        sleep_til_nct = (min_nct - time_context.now).total_seconds()
+        result_ncs = (min_nct - time_context.now).total_seconds()
 
-        return sleep_til_nct
+        return ProcessOnceResult(
+            next_check_secs=result_ncs,
+            races=result_races,
+            bets=result_bets
+        )
 
     def _ingest_races_shallow(self, time_context: TimeContext) -> None:
         """Ingest all races (without entries) for the given time."""
@@ -337,7 +355,7 @@ class RaceDayProcessor:
 
         return races_to_refresh
 
-    def _refresh_race_bets(self, race: Race) -> None:
+    def _refresh_race_bets(self, race: Race) -> List[Bet]:
         """Regenerate bets for the given race."""
         existing_race_bets = (
             self.db.query(Bet).filter(Bet.race.has(Race.id == race.id)).all()
@@ -348,6 +366,7 @@ class RaceDayProcessor:
 
         bet_gen = BetGen(race=race)
         bets = bet_gen.all_bets()
+        result_bets: List[Bet] = []
 
         logger.debug("Generated %d bets for race %s", len(bets), race)
 
@@ -363,11 +382,14 @@ class RaceDayProcessor:
 
             self.bet_tagger.assign_tags(bet_db)
 
-            self.db.add(bet_db)
+            result_bets.append(bet_db)
 
         logger.debug("Saving generated bets")
-
+        
+        self.db.add_all(result_bets)
         self.db.commit()
+
+        return result_bets
 
     def _active_time_context(self) -> TimeContext:
         """Create a TimeContext based on the current time and configured lookahead."""
@@ -503,3 +525,13 @@ class RaceDayProcessor:
         """Log the time to be slept, then sleep."""
         logger.info("Sleeping %d seconds.", sleep_time)
         sleep(sleep_time)
+
+    def _log_complete(self, time_context: TimeContext, races: List[Race], bets: List[Bet], next_check_time: datetime, success: bool):
+        self.proc_logger.log(
+            lookahead_start=time_context.lookahead_start,
+            lookahead_end=time_context.lookahead_end,
+            races=races,
+            bets=bets,
+            next_check_time=next_check_time,
+            success=success,
+        )

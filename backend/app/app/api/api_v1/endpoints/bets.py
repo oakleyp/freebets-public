@@ -1,5 +1,8 @@
+from datetime import datetime, timedelta, timezone
 import logging
-from typing import Any, List
+from typing import Any, List, Optional
+from app.models.raceday_refresh_log import RaceDayRefreshLog
+from app.core.config import settings
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -82,6 +85,13 @@ def read_bets(
     all_track_codes = [race.track_code for race in db.query(Race).distinct(Race.track_code).all()]
     all_bet_strat_types = [str(BetStrategyType[bet_strat_type.name]) for bet_strat_type in BetStrategyType]
     all_bet_types = [str(BetType[bet_type.name]) for bet_type in BetType]
+    latest_refresh_log: Optional[RaceDayRefreshLog] = db.query(RaceDayRefreshLog).order_by(RaceDayRefreshLog.next_check_time.desc()).first()
+
+    if latest_refresh_log:
+        nct: datetime = latest_refresh_log.next_check_time
+        next_refresh_ts = int(nct.timestamp() * 1000)
+    else:
+        next_refresh_ts = int((datetime.now(timezone.utc) + timedelta(seconds=settings.MAX_SLEEP_TIME_SECS)).timestamp() * 1000)
 
     return BetsQueryResponse(
         single_bets=single_bets,
@@ -94,6 +104,7 @@ def read_bets(
         all_bet_types=all_bet_types,
         limit=limit,
         skip=skip,
+        next_refresh_ts=next_refresh_ts + (30 * 1000), # Leave some time (30s) for the job to run
     )
 
 

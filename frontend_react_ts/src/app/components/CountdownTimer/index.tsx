@@ -4,15 +4,21 @@ import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 
-interface PostTimerProps {
-  postTime: number;
+interface CountdownTimerProps {
+  timeMillis: number;
+  endText?: string | null;
+  onEnd?: Function | null;
+  running?: boolean | null;
 }
 
-export function PostTimer({ postTime }: PostTimerProps) {
-  console.log({ postTime });
-
+export function CountdownTimer({
+  timeMillis,
+  onEnd = () => {},
+  endText = 'OFF',
+  running = true,
+}: CountdownTimerProps) {
   const calculateTimeLeft = () => {
-    const difference = dayjs.utc(postTime).diff(dayjs().utc());
+    const difference = dayjs.utc(timeMillis).diff(dayjs().utc());
     let timeLeft = {};
 
     if (difference > 0) {
@@ -30,18 +36,24 @@ export function PostTimer({ postTime }: PostTimerProps) {
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
   useEffect(() => {
-    setTimeout(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
+    if (running) {
+      setTimeout(() => {
+        setTimeLeft(calculateTimeLeft());
+      }, 1000);
+    }
   });
+
+  useEffect(() => {
+    if (running && Object.keys(timeLeft).every(key => !timeLeft[key])) {
+      if (typeof onEnd === 'function') {
+        onEnd();
+      }
+    }
+  }, [timeLeft, onEnd, running]);
 
   let timerComponents: JSX.Element[] = [];
 
   Object.keys(timeLeft).forEach((interval, i) => {
-    if (!timeLeft[interval]) {
-      return;
-    }
-
     timerComponents.push(
       <span>
         {String(timeLeft[interval]).padStart(2, '0')}
@@ -50,5 +62,5 @@ export function PostTimer({ postTime }: PostTimerProps) {
     );
   });
 
-  return <>{timerComponents.length ? timerComponents : 'OFF'}</>;
+  return <>{timerComponents.length ? timerComponents : endText}</>;
 }

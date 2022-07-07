@@ -227,7 +227,7 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         name=random_lower_string(),
         oddsTrend=None,
         oddsRank=random.randint(0, 12),
-        yob=random_lower_string(length=6),
+        yob=str(random.randint(2010, 2022)),
         whelpDate=None,
         color=random_lower_string(length=12),
         sex=random_lower_string(length=12),
@@ -292,5 +292,5 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         otherChange=[False, None, True][random.randint(0, 2)],
         profitlineOdds=random_lower_string(length=12),
         liveOdds=random_lower_string(length=12),
-        scratched=[False, None, True][random.randint(0, 2)],
+        scratched=[True, False, False, False, False, False][random.randint(0, 5)],
     )

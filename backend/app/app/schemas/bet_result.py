@@ -77,6 +77,7 @@ class BetsQueryResponse(BaseModel):
     all_bet_strat_types: List[str]
     all_bet_types: List[str]
     all_track_codes: List[str]
+    next_refresh_ts: Optional[int]
 
 
 class BetGetResponse(BaseModel):

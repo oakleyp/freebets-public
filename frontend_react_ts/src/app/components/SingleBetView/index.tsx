@@ -28,7 +28,7 @@ export function SingleBetView({ bet }: Props) {
         <Grid item xs={12}>
           <EntriesTable rows={bet.active_entries} title="Active Entries" />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xl={6} md={12}>
           <Paper>
             <Toolbar
               sx={{
@@ -92,7 +92,7 @@ export function SingleBetView({ bet }: Props) {
             </TableContainer>
           </Paper>
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xl={6} md={12}>
           <Paper sx={{ height: '100%' }}>
             <Toolbar
               sx={{

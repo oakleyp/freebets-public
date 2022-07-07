@@ -6,7 +6,11 @@ import {
   selectLoading,
   selectCurrentBetSearchParams,
   selectAvailableFilterValues,
+  selectNextRefreshTs,
+  selectCountdownRefreshEnabled,
 } from './slice/selectors';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 
 import { styled } from '@mui/material/styles';
 import List from '@mui/material/List';
@@ -14,7 +18,12 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import MenuIcon from '@mui/icons-material/Menu';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import PauseIcon from '@mui/icons-material/Pause';
+import ResumeIcon from '@mui/icons-material/PlayArrow';
 import Box from '@mui/material/Box';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
 import headerImage from '../../assets/wow.gif';
 import LinearProgress, {
   linearProgressClasses,
@@ -28,6 +37,9 @@ import Toolbar from '@mui/material/Toolbar';
 import { BetsErrorType } from './slice/types';
 import { BetListItem } from './components/BetListItem';
 import { getEffectiveTS } from 'utils/bets';
+import { CountdownTimer } from 'app/components/CountdownTimer';
+
+dayjs.extend(utc);
 
 export function BetIndex() {
   const { actions } = useBetIndexSlice();
@@ -37,6 +49,8 @@ export function BetIndex() {
   const error = useSelector(selectError);
   const currentBetSearchParams = useSelector(selectCurrentBetSearchParams);
   const availableFilterValues = useSelector(selectAvailableFilterValues);
+  const nextRefreshTs = useSelector(selectNextRefreshTs);
+  const countdownRefreshEnabled = useSelector(selectCountdownRefreshEnabled);
 
   const dispatch = useDispatch();
 
@@ -109,7 +123,7 @@ export function BetIndex() {
     return (
       <List>
         {[...bets.multiBets, ...bets.singleBets]
-          .sort((a, b) => getEffectiveTS(b) - getEffectiveTS(a))
+          .sort((a, b) => getEffectiveTS(a) - getEffectiveTS(b))
           .map(bet => (
             <BetListItem bet={bet} key={`betitem-${bet.id}`} />
           ))}
@@ -159,7 +173,7 @@ export function BetIndex() {
             position: 'static',
           }}
         >
-          <Toolbar sx={{ display: 'flex' }}>
+          <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <IconButton
               color="inherit"
               aria-label="open drawer"
@@ -171,9 +185,80 @@ export function BetIndex() {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap component="div">
+            <Typography variant="h6" noWrap component="div" sx={{ flex: 1 }}>
               Upcoming Plays
             </Typography>
+            {!error && (
+              <Stack direction="row" spacing={0} sx={{ flex: 0 }}>
+                <IconButton
+                  color="inherit"
+                  edge="end"
+                  sx={{ mr: 0 }}
+                  disabled={loading}
+                  onClick={() => dispatch(actions.loadBets())}
+                  size="small"
+                >
+                  <RefreshIcon />
+                </IconButton>
+                <IconButton
+                  color="inherit"
+                  edge="end"
+                  sx={{ mr: 0 }}
+                  disabled={loading}
+                  onClick={() =>
+                    dispatch(
+                      actions.setCountdownRefreshEnabled(
+                        !countdownRefreshEnabled,
+                      ),
+                    )
+                  }
+                  size="small"
+                >
+                  {countdownRefreshEnabled || loading ? (
+                    <PauseIcon />
+                  ) : (
+                    <ResumeIcon />
+                  )}
+                </IconButton>
+                <IconButton
+                  color="inherit"
+                  edge="end"
+                  sx={{ mr: 0 }}
+                  disabled={loading || !countdownRefreshEnabled}
+                  onClick={() => dispatch(actions.loadBets())}
+                  size="small"
+                >
+                  {loading ? (
+                    <Skeleton width={80} />
+                  ) : (
+                    <CountdownTimer
+                      timeMillis={
+                        nextRefreshTs ||
+                        dayjs().utc().add(10, 'minute').unix() * 1000
+                      }
+                      onEnd={() =>
+                        !loading &&
+                        countdownRefreshEnabled &&
+                        dispatch(actions.loadBets())
+                      }
+                      endText="Refreshing..."
+                      running={!loading && countdownRefreshEnabled}
+                    />
+                  )}
+                </IconButton>
+              </Stack>
+            )}
+            {error && (
+              <IconButton
+                color="inherit"
+                edge="end"
+                sx={{ mr: 1, flex: 0 }}
+                disabled={loading}
+                size="small"
+              >
+                <RefreshIcon />
+              </IconButton>
+            )}
           </Toolbar>
         </AppBar>
         <FilterDrawer
@@ -222,7 +307,7 @@ const ListHeader = styled(Typography)(({ theme, ...props }) => ({
   color: theme.palette.text.primary,
 }));
 
-const drawerWidth = '10vw';
+const drawerWidth = window.screen.width >= 1024 ? '18vw' : '80vw';
 
 const Main = styled('main', { shouldForwardProp: prop => prop !== 'open' })<{
   open?: boolean;

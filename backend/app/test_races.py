@@ -2,7 +2,6 @@ from app.lib_private.clients.live_racing import LiveRacingClient
 from app.lib.crawlers.live_racing import LiveRacingCrawler
 
 import logging
-from app.ml.predictor import RacePredictor
 from app.models.race import Race
 # from app.tasks.create_bets import CreateBetsTask
 

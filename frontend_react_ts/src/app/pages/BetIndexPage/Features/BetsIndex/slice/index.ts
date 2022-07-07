@@ -25,6 +25,8 @@ export const initialState: BetsIndexState = {
     trackCodes: [], // TODO
   },
   selectedBet: null,
+  nextRefreshTs: null,
+  countdownRefreshEnabled: false,
 };
 
 const slice = createSlice({
@@ -34,6 +36,7 @@ const slice = createSlice({
     loadBets(state) {
       state.loading = true;
       state.error = null;
+      state.countdownRefreshEnabled = false;
     },
     betsLoaded(state, action: PayloadAction<BetsListResponse>) {
       const resp = action.payload;
@@ -47,14 +50,21 @@ const slice = createSlice({
       state.availableFilterValues.trackCodes = resp.all_track_codes;
       state.availableFilterValues.betTypes = resp.all_bet_types;
       state.availableFilterValues.betStratTypes = resp.all_bet_strat_types;
+      state.nextRefreshTs = resp.next_refresh_ts;
       state.loading = false;
+      state.countdownRefreshEnabled = true;
     },
     betsLoadingError(state, action: PayloadAction<BetsErrorType>) {
       state.error = action.payload;
+      state.nextRefreshTs = null;
       state.loading = false;
+      state.countdownRefreshEnabled = false;
     },
     setBetSearchParams(state, action: PayloadAction<BetSearchParams>) {
       state.currentBetSearchParams = action.payload;
+    },
+    setCountdownRefreshEnabled(state, action: PayloadAction<boolean>) {
+      state.countdownRefreshEnabled = action.payload;
     },
   },
 });

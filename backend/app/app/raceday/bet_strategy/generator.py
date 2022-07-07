@@ -27,6 +27,11 @@ class BetGen:
         return [entry for entry in self.race.entries if not entry.scratched]
 
     def all_bets(self):
+        # There shouldn't be a race with all scratches,
+        # but that's not the generator's concern
+        if len(self.active_entries()) < 1:
+            return []
+
         return self.arbitrage_bets()
 
     def arbitrage_bets(self):

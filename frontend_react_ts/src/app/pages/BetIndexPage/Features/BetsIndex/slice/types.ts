@@ -13,6 +13,8 @@ export type BetsIndexState = {
   currentBetSearchParams: BetSearchParams;
   currentBetList: BetList;
   selectedBet?: SingleBet | MultiBet | null;
+  nextRefreshTs?: number | null;
+  countdownRefreshEnabled: boolean;
 };
 
 export type BetList = {

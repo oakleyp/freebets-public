@@ -12,7 +12,7 @@ import { AirplaneTicket, FileCopy } from '@mui/icons-material';
 import Chip from '@mui/material/Chip';
 import ListItemButton from '@mui/material/ListItemButton';
 import Stack from '@mui/material/Stack';
-import { PostTimer } from 'app/components/PostTimer';
+import { CountdownTimer } from 'app/components/CountdownTimer';
 import { getEffectiveTS } from 'utils/bets';
 
 interface BetListItemProps {
@@ -106,13 +106,16 @@ export function BetListItem({ bet }: BetListItemProps) {
           }
           secondary={
             <>
-              <Stack direction="row" spacing={1}>
+              <Stack
+                direction={window.screen.width >= 1024 ? 'row' : 'column'}
+                spacing={1}
+              >
                 <span>{`Cost = $${bet.cost.toFixed(2)}`}</span>
                 <span>{`Min Reward = $${bet.min_reward.toFixed(2)}`}</span>
                 <span>{`Avg. Reward = $${bet.avg_reward.toFixed(2)}`}</span>
                 <span>{`Max Reward = $${bet.max_reward.toFixed(2)}`}</span>
                 <span>
-                  <PostTimer postTime={getEffectiveTS(bet)} />
+                  <CountdownTimer timeMillis={getEffectiveTS(bet)} />
                 </span>
               </Stack>
               {getTags(bet)}
