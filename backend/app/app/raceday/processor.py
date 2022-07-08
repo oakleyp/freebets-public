@@ -3,20 +3,14 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from time import sleep
 from typing import Dict, List, Optional, Union
-from app.lib.clients.demo_live_racing_client import DemoLiveRacingClient
-from app.raceday.processor_logger import RaceDayProcessorLogger
-from app.raceday.processor_result import ProcessOnceResult
-from app.core.config import settings
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.lib.clients.live_abstract import AbstractLiveRacingClient
 
-from app.lib_private.clients.live_racing import LiveRacingClient
-from app.lib.crawlers.live_racing import (
-    LiveRacingCrawler,
-    LiveRacingCrawlerException,
-)
+from app.core.config import settings
+from app.lib.clients.demo_live_racing_client import DemoLiveRacingClient
+from app.lib.clients.live_abstract import AbstractLiveRacingClient
+from app.lib.crawlers.live_racing import LiveRacingCrawler, LiveRacingCrawlerException
 from app.lib.schemas.live_racing import StarterDetails, TrackWithRaceDetails
 from app.ml.predictor.race_predictor import RacePredictor
 from app.models.bet import Bet
@@ -29,10 +23,9 @@ from app.raceday.bet_strategy.bet_strategies import (
 )
 from app.raceday.bet_strategy.bet_tagger import BetTagger
 from app.raceday.bet_strategy.generator import BetGen
-from app.raceday.race_canonical import (
-    LiveRaceEntryCanonical,
-    LiveTrackBasicCanonical,
-)
+from app.raceday.processor_logger import RaceDayProcessorLogger
+from app.raceday.processor_result import ProcessOnceResult
+from app.raceday.race_canonical import LiveRaceEntryCanonical, LiveTrackBasicCanonical
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +167,13 @@ class RaceDayProcessor:
                 logger.exception(
                     "process_once() encountered an error (%s).", e, stack_info=True
                 )
-                self._log_complete(time_context, [], [], datetime.now(timezone.utc) + timedelta(seconds=self.max_sleep_secs), False)
+                self._log_complete(
+                    time_context,
+                    [],
+                    [],
+                    datetime.now(timezone.utc) + timedelta(seconds=self.max_sleep_secs),
+                    False,
+                )
                 self._log_and_sleep(self.max_sleep_secs)
                 continue
 
@@ -188,7 +187,13 @@ class RaceDayProcessor:
                 )
                 sleep_time = self.max_sleep_secs
 
-            self._log_complete(time_context, proc_result.races, proc_result.bets, datetime.now(timezone.utc) + timedelta(seconds=sleep_time), True)
+            self._log_complete(
+                time_context,
+                proc_result.races,
+                proc_result.bets,
+                datetime.now(timezone.utc) + timedelta(seconds=sleep_time),
+                True,
+            )
             self._log_and_sleep(sleep_time)
 
     def process_once(self, time_context: TimeContext) -> ProcessOnceResult:
@@ -252,9 +257,7 @@ class RaceDayProcessor:
         result_ncs = (min_nct - time_context.now).total_seconds()
 
         return ProcessOnceResult(
-            next_check_secs=result_ncs,
-            races=result_races,
-            bets=result_bets
+            next_check_secs=result_ncs, races=result_races, bets=result_bets
         )
 
     def _ingest_races_shallow(self, time_context: TimeContext) -> None:
@@ -402,7 +405,7 @@ class RaceDayProcessor:
             result_bets.append(bet_db)
 
         logger.debug("Saving generated bets")
-        
+
         self.db.add_all(result_bets)
         self.db.commit()
 
@@ -543,7 +546,14 @@ class RaceDayProcessor:
         logger.info("Sleeping %d seconds.", sleep_time)
         sleep(sleep_time)
 
-    def _log_complete(self, time_context: TimeContext, races: List[Race], bets: List[Bet], next_check_time: datetime, success: bool):
+    def _log_complete(
+        self,
+        time_context: TimeContext,
+        races: List[Race],
+        bets: List[Bet],
+        next_check_time: datetime,
+        success: bool,
+    ):
         self.proc_logger.log(
             lookahead_start=time_context.lookahead_start,
             lookahead_end=time_context.lookahead_end,

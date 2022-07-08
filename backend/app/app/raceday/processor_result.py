@@ -1,7 +1,9 @@
 from typing import List
+
+from pydantic import BaseModel
+
 from app.models.bet import Bet
 from app.models.race import Race
-from pydantic import BaseModel
 
 
 class ProcessOnceResult(BaseModel):

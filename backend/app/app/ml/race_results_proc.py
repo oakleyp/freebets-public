@@ -7,8 +7,11 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.lib.clients.historical_abstract import AbstractHistoricalRacingClient
+from app.lib.crawlers.historical_racing import (
+    HistoricalRacingCrawler,
+    HistoricalRacingCrawlerException,
+)
 from app.lib_private.clients.historical_racing import HistoricalRacingClient
-from app.lib.crawlers.historical_racing import HistoricalRacingCrawler, HistoricalRacingCrawlerException
 from app.rabbitmq.pika_client import PikaClient, RmqMessage
 
 logger = logging.getLogger(__name__)
@@ -72,6 +75,7 @@ class RaceResultsProcessor:
     Downloads historical race results and sends the resulting file path out
     to rabbitmq to be parsed and uploaded to clickhouse by the parser service.
     """
+
     def __init__(
         self,
         start_date: date,

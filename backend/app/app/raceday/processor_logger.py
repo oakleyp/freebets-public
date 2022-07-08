@@ -1,24 +1,36 @@
 from datetime import datetime
 from typing import List
+
+from sqlalchemy.orm import Session
+
 from app.models.bet import Bet
 from app.models.race import Race
 from app.models.raceday_refresh_log import RaceDayRefreshLog
-from sqlalchemy.orm import Session
+
 
 class RaceDayProcessorLogger:
     def __init__(self, db: Session):
         self.db = db
 
-    def log(self, *, lookahead_start: datetime, lookahead_end: datetime, races: List[Race] = None, bets: List[Bet] = None, next_check_time: datetime = None, success: bool = False):
+    def log(
+        self,
+        *,
+        lookahead_start: datetime,
+        lookahead_end: datetime,
+        races: List[Race] = None,
+        bets: List[Bet] = None,
+        next_check_time: datetime = None,
+        success: bool = False,
+    ):
         """Log the given results to the race_day_refresh_log table."""
 
         if races is None or bets is None or next_check_time is None:
             args = {
-                'lookahead_start': lookahead_start,
-                'lookahead_end': lookahead_end,
-                'races': races,
-                'bets': bets,
-                'next_check_time': next_check_time,
+                "lookahead_start": lookahead_start,
+                "lookahead_end": lookahead_end,
+                "races": races,
+                "bets": bets,
+                "next_check_time": next_check_time,
             }
 
             param_items: List[str] = []

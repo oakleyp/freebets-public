@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING
-
 from sqlalchemy import Boolean, Column, Integer
-from app.db.custom_types import TZDateTime
+
 from app.db.base_class import Base
+from app.db.custom_types import TZDateTime
+
 
 class RaceDayRefreshLog(Base):
     id = Column(Integer, primary_key=True, index=True)
@@ -13,4 +13,3 @@ class RaceDayRefreshLog(Base):
     entry_count = Column(Integer, nullable=False)
     bet_count = Column(Integer, nullable=False)
     success = Column(Boolean, nullable=False, index=True)
-    

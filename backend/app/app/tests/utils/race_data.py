@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
+from wonderwords import RandomWord
 
 from app.lib.schemas.live_racing import (
     Featured,
@@ -14,7 +15,6 @@ from app.lib.schemas.live_racing import (
     TrackWithRaceDetails,
 )
 from app.tests.utils.utils import random_datetime_in_range, random_lower_string
-from wonderwords import RandomWord
 
 rand_word = RandomWord()
 
@@ -41,13 +41,21 @@ def create_random_odds_str() -> str:
     return f"{random.randint(1, 50)}/{random.randint(1,3)}"
 
 
+def create_random_horse_name() -> str:
+    return " ".join(
+        rand_word.random_words(
+            random.randint(1, 2), include_parts_of_speech=["noun", "adjective"]
+        )
+    ).title()
+
+
 def create_race_details_n(
     n: int,
     *,
     adjacent: bool = False,
     adjacent_dt_start: datetime = datetime.now(timezone.utc),
     adjacent_increment: str = "minutes",
-    **race_detail_args
+    **race_detail_args,
 ) -> List[RaceDetails]:
     if not adjacent:
         return [create_race_details(i + 1, **race_detail_args) for i in range(n)]
@@ -80,7 +88,7 @@ def create_race_details(
     ),
     status: str = "Open",
     current_race: bool = False,
-    precision_mod: str = "minutes"
+    precision_mod: str = "minutes",
 ) -> RaceDetails:
     post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
 
@@ -129,8 +137,12 @@ def create_track_with_race_details(
         races=create_race_details_n(2, adjacent=True, **race_details_args),
     )
 
-def create_track_with_race_and_starter_details_n(n: int) -> List[TrackWithRaceAndStarterDetails]:
+
+def create_track_with_race_and_starter_details_n(
+    n: int,
+) -> List[TrackWithRaceAndStarterDetails]:
     return [create_track_with_race_and_starter_details() for _ in range(n)]
+
 
 def create_track_with_race_and_starter_details(
     race_details_args: Dict[str, Any] = {}
@@ -149,16 +161,19 @@ def create_track_with_race_and_starter_details(
         races=create_race_and_starter_details_n(2, adjacent=True, **race_details_args),
     )
 
+
 def create_race_and_starter_details_n(
     n: int,
     *,
     adjacent: bool = False,
     adjacent_dt_start: datetime = datetime.now(timezone.utc),
     adjacent_increment: str = "minutes",
-    **race_detail_args
+    **race_detail_args,
 ) -> List[RaceWithStarterDetails]:
     if not adjacent:
-        return [create_race_and_starter_details(i + 1, **race_detail_args) for i in range(n)]
+        return [
+            create_race_and_starter_details(i + 1, **race_detail_args) for i in range(n)
+        ]
 
     uniform_rng = create_uniform_range_for_time_unit(n, adjacent_increment)
 
@@ -178,6 +193,7 @@ def create_race_and_starter_details_n(
 
     return results
 
+
 def create_race_and_starter_details(
     race_number: int,
     *,
@@ -187,7 +203,7 @@ def create_race_and_starter_details(
     ),
     status: str = "Open",
     current_race: bool = False,
-    precision_mod: str = "minutes"
+    precision_mod: str = "minutes",
 ) -> RaceWithStarterDetails:
     post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
 
@@ -212,12 +228,13 @@ def create_race_and_starter_details(
         carryover=[],
         currentRace=current_race,
         hasExpertPick=True,
-        starters=create_starters_n(random.randint(6, 15))
+        starters=create_starters_n(random.randint(6, 15)),
     )
 
 
 def create_starters_n(n: int) -> List[StarterDetails]:
     return [create_starter(n, n) for n in range(n)]
+
 
 def create_starter(horse_num: int, pp: int) -> StarterDetails:
     return StarterDetails(
@@ -227,7 +244,7 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         programNumber=str(horse_num),
         sortableProgramNumber=horse_num,
         bettingInterest=random.randint(0, 12),
-        name=rand_word.random_words(2, include_parts_of_speech=['noun', 'adjective']),
+        name=create_random_horse_name(),
         oddsTrend=None,
         oddsRank=random.randint(0, 12),
         yob=str(random.randint(2010, 2022)),
