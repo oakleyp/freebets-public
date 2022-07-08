@@ -14,7 +14,7 @@ import Collapse from '@mui/material/Collapse';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import Box from '@mui/material/Box';
-import React, { MutableRefObject, useState } from 'react';
+import React, { MutableRefObject, useMemo, useState } from 'react';
 import Divider from '@mui/material/Divider';
 import Switch from '@mui/material/Switch';
 import FormGroup from '@mui/material/FormGroup';
@@ -77,32 +77,44 @@ export function FilterDrawer({
 }: FilterDrawerProps) {
   const theme = useTheme();
 
-  const filterTypes = {
-    betTypes: {
-      label: 'Bet Types',
-      openState: useState(false),
-      filterState: filterStates.betTypes.state[0],
-      setFilterState: filterStates.betTypes.state[1],
-      availableFilterValues: filterStates.betTypes.available,
-      valueDecorator: val => getBetTypeDisplay(val.replace('BetType.', '')),
-    },
-    betStrategies: {
-      label: 'Bet Strategy Types',
-      openState: useState(false),
-      filterState: filterStates.betStrategies.state[0],
-      setFilterState: filterStates.betStrategies.state[1],
-      availableFilterValues: filterStates.betStrategies.available,
-      valueDecorator: val =>
-        getBetStratTypeDisplay(val.replace('BetStrategyType.', '')),
-    },
-    trackCodes: {
-      label: 'Tracks',
-      openState: useState(false),
-      filterState: filterStates.trackCodes.state[0],
-      setFilterState: filterStates.trackCodes.state[1],
-      availableFilterValues: filterStates.trackCodes.available,
-      valueDecorator: val => val.toUpperCase(),
-    },
+  const filterTypes = useMemo(
+    () => ({
+      betTypes: {
+        label: 'Bet Types',
+        filterState: filterStates.betTypes.state[0],
+        setFilterState: filterStates.betTypes.state[1],
+        availableFilterValues: [...filterStates.betTypes.available].sort(
+          (a, b) => a.localeCompare(b),
+        ),
+        valueDecorator: val => getBetTypeDisplay(val.replace('BetType.', '')),
+      },
+      betStrategies: {
+        label: 'Bet Strategy Types',
+        filterState: filterStates.betStrategies.state[0],
+        setFilterState: filterStates.betStrategies.state[1],
+        availableFilterValues: [...filterStates.betStrategies.available].sort(
+          (a, b) => a.localeCompare(b),
+        ),
+        valueDecorator: val =>
+          getBetStratTypeDisplay(val.replace('BetStrategyType.', '')),
+      },
+      trackCodes: {
+        label: 'Tracks',
+        filterState: filterStates.trackCodes.state[0],
+        setFilterState: filterStates.trackCodes.state[1],
+        availableFilterValues: [...filterStates.trackCodes.available].sort(
+          (a, b) => a.localeCompare(b),
+        ),
+        valueDecorator: val => val.toUpperCase(),
+      },
+    }),
+    [filterStates],
+  );
+
+  const filterCatOpenStates = {
+    betTypes: useState(false),
+    betStrategies: useState(false),
+    trackCodes: useState(false),
   };
 
   // console.log(filterTypes);
@@ -120,8 +132,8 @@ export function FilterDrawer({
   }
 
   function handleFilterMenuItemClick(filterType) {
-    const [open, setOpen] = filterTypes[filterType].openState;
-    setOpen(!open);
+    const [open, setFilterCatOpen] = filterCatOpenStates[filterType];
+    setFilterCatOpen(!open);
   }
 
   return (
@@ -194,7 +206,7 @@ export function FilterDrawer({
                   onClick={() => handleFilterMenuItemClick(filterType)}
                 >
                   <ListItemText primary={filterTypes[filterType].label} />
-                  {filterTypes[filterType].openState[0] ? (
+                  {filterCatOpenStates[filterType][0] ? (
                     <ExpandLess />
                   ) : (
                     <ExpandMore />
@@ -202,7 +214,7 @@ export function FilterDrawer({
                 </ListItemButton>
               </ListItem>
               <Collapse
-                in={filterTypes[filterType].openState[0]}
+                in={filterCatOpenStates[filterType][0]}
                 timeout="auto"
                 unmountOnExit
               >
@@ -213,15 +225,8 @@ export function FilterDrawer({
                       spacing={1}
                       sx={{ maxWidth: '100%' }}
                     >
-                      {[...filterTypes[filterType].availableFilterValues]
-                        .sort((a, b) =>
-                          filterTypes[filterType]
-                            .valueDecorator(a)
-                            .localeCompare(
-                              filterTypes[filterType].valueDecorator(b),
-                            ),
-                        )
-                        .map(value => (
+                      {filterTypes[filterType].availableFilterValues.map(
+                        value => (
                           <FormGroup key={`${filterType}-${value}-checked`}>
                             <FormControlLabel
                               sx={{ maxWidth: '100%', wordBreak: 'break-word' }}
@@ -240,7 +245,8 @@ export function FilterDrawer({
                               )}
                             />
                           </FormGroup>
-                        ))}
+                        ),
+                      )}
                     </Stack>
                   </ListItemText>
                 </List>

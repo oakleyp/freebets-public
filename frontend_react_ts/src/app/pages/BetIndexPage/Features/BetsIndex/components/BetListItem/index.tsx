@@ -86,12 +86,11 @@ function getBetTypeIcons(bet: any): any {
 
 interface BetListItemProps {
   bet: any;
-  ref?: React.Ref<unknown> | undefined;
 }
 
-export function BetListItem({ bet, ref }: BetListItemProps) {
+export function BetListItem({ bet }: BetListItemProps) {
   return (
-    <Tooltip title="Open play in new tab" ref={ref}>
+    <Tooltip title="Open play in new tab">
       <StyledListItem component={Link} href={`/bets/${bet.id}`} target="_blank">
         <ListItemAvatar>
           <Avatar>{getBetIcon(bet)}</Avatar>

@@ -1,4 +1,12 @@
-import React, { useState, useEffect, useRef, MutableRefObject } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  MutableRefObject,
+  createRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   selectBets,
@@ -127,19 +135,24 @@ export function BetIndex() {
     </Box>
   );
 
-  const allBets = [...bets.multiBets, ...bets.singleBets];
+  const allBets = useMemo(
+    () => [...bets.multiBets, ...bets.singleBets],
+    [bets],
+  );
 
   const betItemRefMap = useRef({});
 
   useEffect(() => {
-    betItemRefMap.current = allBets.reduce(
+    const newmap = allBets.reduce(
       (map, bet) => ({
         ...map,
         [bet.id]: betItemRefMap.current[bet.id],
       }),
       {},
     );
-  });
+
+    betItemRefMap.current = newmap;
+  }, [allBets]);
 
   function listBets(bets: any) {
     return (
@@ -147,11 +160,12 @@ export function BetIndex() {
         {[...allBets]
           .sort((a, b) => getEffectiveTS(a) - getEffectiveTS(b))
           .map(bet => (
-            <BetListItem
-              ref={el => (betItemRefMap[bet.id] = el)}
-              bet={bet}
+            <div
+              ref={el => (betItemRefMap.current[bet.id] = el)}
               key={`betitem-${bet.id}`}
-            />
+            >
+              <BetListItem bet={bet} />
+            </div>
           ))}
       </List>
     );
@@ -183,6 +197,12 @@ export function BetIndex() {
     return fn();
   }
 
+  const handleBetSelection = useCallback(bet => {
+    betItemRefMap.current[bet.id].scrollIntoView({
+      behavior: 'smooth',
+    });
+  }, []);
+
   const drawerContainerRef: MutableRefObject<Element | null> = useRef(null);
 
   function betTable(bets: any) {
@@ -190,7 +210,7 @@ export function BetIndex() {
       <>
         <Box sx={{ margin: '1em 0' }}>
           {!loading && bets.singleBets.length && (
-            <TimeseriesChart bets={allBets} />
+            <TimeseriesChart bets={allBets} onSelection={handleBetSelection} />
           )}
           {loading && (
             <>
