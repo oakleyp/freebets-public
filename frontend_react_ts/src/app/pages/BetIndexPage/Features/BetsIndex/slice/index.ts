@@ -44,7 +44,15 @@ const slice = createSlice({
       state.currentBetList.multiBets = resp.multi_bets;
       state.currentBetSearchParams.betStratTypes = resp.bet_strat_types;
       state.currentBetSearchParams.betTypes = resp.bet_types;
-      state.currentBetSearchParams.trackCodes = resp.track_codes;
+      // Only add previously unseen track codes to default filter
+      state.currentBetSearchParams.trackCodes = [
+        ...new Set([
+          ...resp.track_codes,
+          ...resp.all_track_codes.filter(
+            tc => !state.availableFilterValues.trackCodes.includes(tc),
+          ),
+        ]),
+      ];
       state.currentBetSearchParams.limit = resp.limit;
       state.currentBetSearchParams.skip = resp.skip;
       state.availableFilterValues.trackCodes = resp.all_track_codes;

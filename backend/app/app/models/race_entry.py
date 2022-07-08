@@ -70,7 +70,7 @@ class RaceEntry(Base):
     scratched = Column(Boolean, nullable=True, index=True)
     predicted_odds = Column(Float)
 
-    race_id = Column(Integer, ForeignKey("race.id"))
+    race_id = Column(Integer, ForeignKey("race.id", ondelete="CASCADE"), nullable=False)
     race = relationship("Race", back_populates="entries")
 
     def latest_odds(self) -> Optional[float]:

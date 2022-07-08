@@ -38,7 +38,7 @@ class Race(Base):
     race_type = Column(String, nullable=False)  # Thoroughbred, Harness, etc.
 
     entries = relationship(
-        "RaceEntry", back_populates="race", cascade="all", uselist=True
+        "RaceEntry", back_populates="race", cascade="all, delete-orphan", uselist=True
     )
     bets = relationship(
         "Bet", back_populates="race", cascade="all, delete-orphan", uselist=True

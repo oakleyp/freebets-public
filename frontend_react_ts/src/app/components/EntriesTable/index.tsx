@@ -361,9 +361,12 @@ export function EntriesTable({ rows, title }: EntriesTableProps) {
                         {row.program_no}
                       </TableCell>
                       <TableCell align="right">{row.name}</TableCell>
-                      <TableCell align="right">{row.odds}</TableCell>
                       <TableCell align="right">
-                        {row.ai_predicted_odds}
+                        {typeof row.odds === 'number' && row.odds.toFixed(2)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {typeof row.ai_predicted_odds === 'number' &&
+                          row.ai_predicted_odds.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   );

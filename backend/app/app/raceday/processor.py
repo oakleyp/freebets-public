@@ -324,6 +324,8 @@ class RaceDayProcessor:
         """
         races_to_remove: List[int] = []
 
+        # Big TODO: Fix relationship cascades here
+
         for (id, watcher) in self.watching_races.copy().items():
             nct = self.next_check_gen.get_next_check_time(watcher, time_context)
 
@@ -331,6 +333,8 @@ class RaceDayProcessor:
                 del self.watching_races[id]
                 races_to_remove.append(id)
 
+
+            
             existing_race_bets = (
                 self.db.query(Bet).filter(Bet.race.has(Race.id == id)).all()
             )
@@ -342,6 +346,8 @@ class RaceDayProcessor:
 
         races = self.db.query(Race).filter(Race.id.in_(races_to_remove)).all()
         for race in races:
+            for entry in race.entries:
+                self.db.delete(entry)
             self.db.delete(race)
 
         self.db.commit()
