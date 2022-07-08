@@ -53,10 +53,14 @@ def create_race_details_n(
     n: int,
     *,
     adjacent: bool = False,
-    adjacent_dt_start: datetime = datetime.now(timezone.utc),
+    adjacent_dt_start: datetime = None,
     adjacent_increment: str = "minutes",
     **race_detail_args,
 ) -> List[RaceDetails]:
+    start = adjacent_dt_start
+    if not start:
+        start = datetime.now(timezone.utc)
+
     if not adjacent:
         return [create_race_details(i + 1, **race_detail_args) for i in range(n)]
 
@@ -64,8 +68,8 @@ def create_race_details_n(
 
     results: List[RaceDetails] = []
 
-    curr_start = adjacent_dt_start
-    curr_end = adjacent_dt_start
+    curr_start = start
+    curr_end = start
 
     for i in range(n):
         curr_end = curr_start + timedelta(**{adjacent_increment: uniform_rng[i]})
@@ -82,21 +86,25 @@ def create_race_details_n(
 def create_race_details(
     race_number: int,
     *,
-    dt_range: Tuple[datetime, datetime] = (
-        datetime.now(timezone.utc),
-        datetime.now(timezone.utc) + timedelta(hours=2),
-    ),
+    dt_range: Tuple[datetime, datetime] = None,
     status: str = "Open",
     current_race: bool = False,
     precision_mod: str = "minutes",
 ) -> RaceDetails:
+    effective_dt_range = dt_range
+    if not effective_dt_range:
+        effective_dt_range = (
+            datetime.now(timezone.utc),
+            datetime.now(timezone.utc) + timedelta(hours=2),
+        ),
+
     post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
 
-    print(*dt_range, post_time)
+    print(*effective_dt_range, post_time)
 
     return RaceDetails(
         raceNumber=race_number,
-        raceDate=random_datetime_in_range(*dt_range).date(),
+        raceDate=random_datetime_in_range(*effective_dt_range).date(),
         postTime=post_time,
         postTimeStamp=post_time.timestamp() * 1000,
         mtp=99,
@@ -166,10 +174,15 @@ def create_race_and_starter_details_n(
     n: int,
     *,
     adjacent: bool = False,
-    adjacent_dt_start: datetime = datetime.now(timezone.utc),
+    adjacent_dt_start: datetime = None,
     adjacent_increment: str = "minutes",
     **race_detail_args,
 ) -> List[RaceWithStarterDetails]:
+    start = adjacent_dt_start
+
+    if not start:
+        start = datetime.now(timezone.utc),
+
     if not adjacent:
         return [
             create_race_and_starter_details(i + 1, **race_detail_args) for i in range(n)
@@ -179,8 +192,8 @@ def create_race_and_starter_details_n(
 
     results: List[RaceDetails] = []
 
-    curr_start = adjacent_dt_start
-    curr_end = adjacent_dt_start
+    curr_start = start
+    curr_end = start
 
     for i in range(n):
         curr_end = curr_start + timedelta(**{adjacent_increment: uniform_rng[i]})
@@ -197,21 +210,25 @@ def create_race_and_starter_details_n(
 def create_race_and_starter_details(
     race_number: int,
     *,
-    dt_range: Tuple[datetime, datetime] = (
-        datetime.now(timezone.utc),
-        datetime.now(timezone.utc) + timedelta(hours=2),
-    ),
+    dt_range: Tuple[datetime, datetime] = None,
     status: str = "Open",
     current_race: bool = False,
     precision_mod: str = "minutes",
 ) -> RaceWithStarterDetails:
-    post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
+    effective_dt_range = dt_range
+    if not effective_dt_range:
+        effective_dt_range = (
+            datetime.now(timezone.utc),
+            datetime.now(timezone.utc) + timedelta(hours=2),
+        )
 
-    print(*dt_range, post_time)
+    post_time = random_datetime_in_range(*effective_dt_range, precision_modifier=precision_mod)
+
+    print(*effective_dt_range, post_time)
 
     return RaceWithStarterDetails(
         raceNumber=race_number,
-        raceDate=random_datetime_in_range(*dt_range).date(),
+        raceDate=random_datetime_in_range(*effective_dt_range).date(),
         postTime=post_time,
         postTimeStamp=post_time.timestamp() * 1000,
         mtp=99,

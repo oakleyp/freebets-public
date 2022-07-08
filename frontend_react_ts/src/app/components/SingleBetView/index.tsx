@@ -16,6 +16,8 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import { EntriesTable } from 'app/components/EntriesTable';
+import { CountdownTimer } from '../CountdownTimer';
+import { getEffectiveTS } from 'utils/bets';
 
 interface Props {
   bet: SingleBet;
@@ -83,9 +85,14 @@ export function SingleBetView({ bet }: Props) {
                     sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                   >
                     <TableCell component="th" scope="row">
-                      Betting Status
+                      Time to Post
                     </TableCell>
-                    <TableCell align="right">{bet.race.status}</TableCell>
+                    <TableCell align="right">
+                      <CountdownTimer
+                        timeMillis={getEffectiveTS(bet)}
+                        endText="OFF"
+                      />
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

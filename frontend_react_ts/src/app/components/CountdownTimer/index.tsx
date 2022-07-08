@@ -55,7 +55,7 @@ export function CountdownTimer({
 
   Object.keys(timeLeft).forEach((interval, i) => {
     timerComponents.push(
-      <span>
+      <span key={interval}>
         {String(timeLeft[interval]).padStart(2, '0')}
         {i < Object.keys(timeLeft).length - 1 && ':'}
       </span>,

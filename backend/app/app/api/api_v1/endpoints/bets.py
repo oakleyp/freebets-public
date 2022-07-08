@@ -117,7 +117,7 @@ def read_bets(
         limit=limit,
         skip=skip,
         next_refresh_ts=next_refresh_ts
-        + (30 * 1000),  # Leave some time (30s) for the job to run
+        + settings.EXPECTED_PROCESS_TIME_SECS * 1000,  # Leave some time for the job to run
     )
 
 

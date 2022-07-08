@@ -161,23 +161,27 @@ export function FilterDrawer({
               <Stack direction="row">
                 <span style={{ flex: '1' }}>Filters</span>
                 <Tooltip title={'Revert filter changes'}>
-                  <IconButton
-                    size="small"
-                    disabled={!filterStateDirty}
-                    onClick={() => resetFilters()}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled={!filterStateDirty}
+                      onClick={() => resetFilters()}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </span>
                 </Tooltip>
                 <Tooltip title={'Update search'}>
-                  <IconButton
-                    color="success"
-                    size="small"
-                    disabled={!filterStateDirty}
-                    onClick={() => saveFilters()}
-                  >
-                    <CheckIcon />
-                  </IconButton>
+                  <span>
+                    <IconButton
+                      color="success"
+                      size="small"
+                      disabled={!filterStateDirty}
+                      onClick={() => saveFilters()}
+                    >
+                      <CheckIcon />
+                    </IconButton>
+                  </span>
                 </Tooltip>
               </Stack>
             </ListSubheader>

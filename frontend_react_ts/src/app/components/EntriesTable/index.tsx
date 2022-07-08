@@ -82,7 +82,7 @@ interface HeadCell {
 const headCells: readonly HeadCell[] = [
   {
     id: 'program_no',
-    numeric: false,
+    numeric: true,
     disablePadding: true,
     label: 'Program No.',
   },
@@ -141,15 +141,12 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             indeterminate={numSelected > 0 && numSelected < rowCount}
             checked={rowCount > 0 && numSelected === rowCount}
             onChange={onSelectAllClick}
-            inputProps={{
-              'aria-label': 'select all desserts',
-            }}
           />
         </TableCell>
         {headCells.map(headCell => (
           <TableCell
             key={headCell.id}
-            align={headCell.numeric ? 'right' : 'left'}
+            align="right"
             padding={headCell.disablePadding ? 'none' : 'normal'}
             sortDirection={orderBy === headCell.id ? order : false}
           >
@@ -358,7 +355,7 @@ export function EntriesTable({ rows, title }: EntriesTableProps) {
                         scope="row"
                         padding="none"
                       >
-                        {row.program_no}
+                        {Number(row.program_no)}
                       </TableCell>
                       <TableCell align="right">{row.name}</TableCell>
                       <TableCell align="right">

@@ -15,10 +15,6 @@ import Stack from '@mui/material/Stack';
 import { CountdownTimer } from 'app/components/CountdownTimer';
 import { getEffectiveTS } from 'utils/bets';
 
-interface BetListItemProps {
-  bet: any;
-}
-
 function getBetIcon(bet: any): any {
   if (bet.sub_bets) {
     return <FileCopy />;
@@ -88,9 +84,14 @@ function getBetTypeIcons(bet: any): any {
     .map(spec => <Tooltip title={spec.tooltip}>{spec.icon}</Tooltip>);
 }
 
-export function BetListItem({ bet }: BetListItemProps) {
+interface BetListItemProps {
+  bet: any;
+  ref?: React.Ref<unknown> | undefined;
+}
+
+export function BetListItem({ bet, ref }: BetListItemProps) {
   return (
-    <Tooltip title="Open play in new tab">
+    <Tooltip title="Open play in new tab" ref={ref}>
       <StyledListItem component={Link} href={`/bets/${bet.id}`} target="_blank">
         <ListItemAvatar>
           <Avatar>{getBetIcon(bet)}</Avatar>

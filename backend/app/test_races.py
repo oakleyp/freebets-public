@@ -20,5 +20,14 @@ rdproc = RaceDayProcessor(
     lookahead_base=timedelta(days=0, hours=0, minutes=5),
     lookahead_limit=timedelta(days=0, minutes=40),
     max_bets_per_race=10,
-    race_refresh_interval=timedelta(days=0, minutes=5)
+    race_refresh_interval=timedelta(days=0, minutes=5),
+    live_racing_client=LiveRacingClient(),
+)
+
+demordproc = RaceDayProcessor(
+    SessionLocal(),
+    lookahead_base=timedelta(days=0, hours=0, minutes=5),
+    lookahead_limit=timedelta(days=0, minutes=40),
+    max_bets_per_race=10,
+    race_refresh_interval=timedelta(days=0, minutes=5),
 )

@@ -38,6 +38,7 @@ import { BetsErrorType } from './slice/types';
 import { BetListItem } from './components/BetListItem';
 import { getEffectiveTS } from 'utils/bets';
 import { CountdownTimer } from 'app/components/CountdownTimer';
+import { TimeseriesChart } from './components/TimeseriesChart';
 
 dayjs.extend(utc);
 
@@ -126,13 +127,31 @@ export function BetIndex() {
     </Box>
   );
 
+  const allBets = [...bets.multiBets, ...bets.singleBets];
+
+  const betItemRefMap = useRef({});
+
+  useEffect(() => {
+    betItemRefMap.current = allBets.reduce(
+      (map, bet) => ({
+        ...map,
+        [bet.id]: betItemRefMap.current[bet.id],
+      }),
+      {},
+    );
+  });
+
   function listBets(bets: any) {
     return (
       <List>
-        {[...bets.multiBets, ...bets.singleBets]
+        {[...allBets]
           .sort((a, b) => getEffectiveTS(a) - getEffectiveTS(b))
           .map(bet => (
-            <BetListItem bet={bet} key={`betitem-${bet.id}`} />
+            <BetListItem
+              ref={el => (betItemRefMap[bet.id] = el)}
+              bet={bet}
+              key={`betitem-${bet.id}`}
+            />
           ))}
       </List>
     );
@@ -168,131 +187,154 @@ export function BetIndex() {
 
   function betTable(bets: any) {
     return (
-      <Box
-        component={Paper}
-        ref={drawerContainerRef}
-        id="drawcontainer"
-        sx={{ position: 'relative' }}
-      >
-        <AppBar
-          open={filterOpen}
-          sx={{
-            position: 'static',
-          }}
+      <>
+        <Box sx={{ margin: '1em 0' }}>
+          {!loading && bets.singleBets.length && (
+            <TimeseriesChart bets={allBets} />
+          )}
+          {loading && (
+            <>
+              <Skeleton
+                variant="rectangular"
+                width={'100%'}
+                height={20}
+                sx={{ marginBottom: '0.5em' }}
+              />
+              <Skeleton
+                variant="rectangular"
+                animation="wave"
+                width={'100%'}
+                height={100}
+              />
+            </>
+          )}
+        </Box>
+        <Box
+          component={Paper}
+          ref={drawerContainerRef}
+          id="drawcontainer"
+          sx={{ position: 'relative' }}
         >
-          <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              onClick={() => {
-                setFilterOpen(true);
-              }}
-              edge="start"
-              sx={{ mr: 2, ...(filterOpen && { display: 'none' }) }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" noWrap component="div" sx={{ flex: 1 }}>
-              Upcoming Plays
-            </Typography>
-            {!error && (
-              <Stack direction="row" spacing={0} sx={{ flex: 0 }}>
+          <AppBar
+            open={filterOpen}
+            sx={{
+              position: 'static',
+            }}
+          >
+            <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                onClick={() => {
+                  setFilterOpen(true);
+                }}
+                edge="start"
+                sx={{ mr: 2, ...(filterOpen && { display: 'none' }) }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" noWrap component="div" sx={{ flex: 1 }}>
+                Upcoming Plays
+              </Typography>
+              {!error && (
+                <Stack direction="row" spacing={0} sx={{ flex: 0 }}>
+                  <IconButton
+                    color="inherit"
+                    edge="end"
+                    sx={{ mr: 0 }}
+                    disabled={loading}
+                    onClick={() => dispatch(actions.loadBets())}
+                    size="small"
+                  >
+                    <RefreshIcon />
+                  </IconButton>
+                  <IconButton
+                    color="inherit"
+                    edge="end"
+                    sx={{ mr: 0 }}
+                    disabled={loading}
+                    onClick={() =>
+                      dispatch(
+                        actions.setCountdownRefreshEnabled(
+                          !countdownRefreshEnabled,
+                        ),
+                      )
+                    }
+                    size="small"
+                  >
+                    {countdownRefreshEnabled || loading ? (
+                      <PauseIcon />
+                    ) : (
+                      <ResumeIcon />
+                    )}
+                  </IconButton>
+                  <IconButton
+                    color="inherit"
+                    edge="end"
+                    sx={{ mr: 0 }}
+                    disabled={loading || !countdownRefreshEnabled}
+                    onClick={() => dispatch(actions.loadBets())}
+                    size="small"
+                  >
+                    {loading ? (
+                      <Skeleton width={80} />
+                    ) : (
+                      <CountdownTimer
+                        timeMillis={effectiveNextRefreshTs}
+                        onEnd={() =>
+                          !loading &&
+                          countdownRefreshEnabled &&
+                          dispatch(actions.loadBets())
+                        }
+                        endText="Refreshing..."
+                        running={!loading && countdownRefreshEnabled}
+                      />
+                    )}
+                  </IconButton>
+                </Stack>
+              )}
+              {error && (
                 <IconButton
                   color="inherit"
                   edge="end"
-                  sx={{ mr: 0 }}
+                  sx={{ mr: 1, flex: 0 }}
                   disabled={loading}
                   onClick={() => dispatch(actions.loadBets())}
                   size="small"
                 >
                   <RefreshIcon />
                 </IconButton>
-                <IconButton
-                  color="inherit"
-                  edge="end"
-                  sx={{ mr: 0 }}
-                  disabled={loading}
-                  onClick={() =>
-                    dispatch(
-                      actions.setCountdownRefreshEnabled(
-                        !countdownRefreshEnabled,
-                      ),
-                    )
-                  }
-                  size="small"
-                >
-                  {countdownRefreshEnabled || loading ? (
-                    <PauseIcon />
-                  ) : (
-                    <ResumeIcon />
-                  )}
-                </IconButton>
-                <IconButton
-                  color="inherit"
-                  edge="end"
-                  sx={{ mr: 0 }}
-                  disabled={loading || !countdownRefreshEnabled}
-                  onClick={() => dispatch(actions.loadBets())}
-                  size="small"
-                >
-                  {loading ? (
-                    <Skeleton width={80} />
-                  ) : (
-                    <CountdownTimer
-                      timeMillis={effectiveNextRefreshTs}
-                      onEnd={() =>
-                        !loading &&
-                        countdownRefreshEnabled &&
-                        dispatch(actions.loadBets())
-                      }
-                      endText="Refreshing..."
-                      running={!loading && countdownRefreshEnabled}
-                    />
-                  )}
-                </IconButton>
-              </Stack>
-            )}
-            {error && (
-              <IconButton
-                color="inherit"
-                edge="end"
-                sx={{ mr: 1, flex: 0 }}
-                disabled={loading}
-                onClick={() => dispatch(actions.loadBets())}
-                size="small"
-              >
-                <RefreshIcon />
-              </IconButton>
-            )}
-          </Toolbar>
-        </AppBar>
-        <FilterDrawer
-          containerRef={drawerContainerRef}
-          width={drawerWidth}
-          open={filterOpen}
-          setOpen={setFilterOpen}
-          filterStates={{
-            betTypes: {
-              state: [betTypes, stateMutWrapper(setBetTypes)],
-              available: availableFilterValues.betTypes,
-            },
-            betStrategies: {
-              state: [betStrategies, stateMutWrapper(setBetStrategies)],
-              available: availableFilterValues.betStratTypes,
-            },
-            trackCodes: {
-              state: [trackCodes, stateMutWrapper(setTrackCodes)],
-              available: availableFilterValues.trackCodes,
-            },
-          }}
-          saveFilters={handleFilterSaveClick}
-          resetFilters={handleFilterResetClick}
-          filterStateDirty={filterStateDirty}
-        />
-        <Main open={filterOpen}>
-          <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
-        </Main>
-      </Box>
+              )}
+            </Toolbar>
+          </AppBar>
+          <FilterDrawer
+            containerRef={drawerContainerRef}
+            width={drawerWidth}
+            open={filterOpen}
+            setOpen={setFilterOpen}
+            filterStates={{
+              betTypes: {
+                state: [betTypes, stateMutWrapper(setBetTypes)],
+                available: availableFilterValues.betTypes,
+              },
+              betStrategies: {
+                state: [betStrategies, stateMutWrapper(setBetStrategies)],
+                available: availableFilterValues.betStratTypes,
+              },
+              trackCodes: {
+                state: [trackCodes, stateMutWrapper(setTrackCodes)],
+                available: availableFilterValues.trackCodes,
+              },
+            }}
+            saveFilters={handleFilterSaveClick}
+            resetFilters={handleFilterResetClick}
+            filterStateDirty={filterStateDirty}
+          />
+          <Main open={filterOpen}>
+            <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
+          </Main>
+        </Box>
+      </>
     );
   }
 

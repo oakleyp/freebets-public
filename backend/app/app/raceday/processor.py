@@ -125,6 +125,7 @@ class RaceDayProcessor:
         max_sleep_secs: float = float(settings.MAX_SLEEP_TIME_SECS),
         max_bets_per_race: int = 1000,
         resilient: bool = True,
+        live_racing_client: AbstractLiveRacingClient = DemoLiveRacingClient(),
     ) -> None:
         self.db: Session = db
         self.enabled_bet_types: List[BetTypeImpl] = enabled_bet_types
@@ -139,7 +140,7 @@ class RaceDayProcessor:
 
         self.watching_races: Dict[int, RaceWatcher] = {}
 
-        self.live_race_client: AbstractLiveRacingClient = DemoLiveRacingClient()
+        self.live_race_client: AbstractLiveRacingClient = live_racing_client
         self.live_race_crawler = LiveRacingCrawler(self.live_race_client)
         self.bet_tagger = BetTagger(self.db)
         self.proc_logger = RaceDayProcessorLogger(self.db)

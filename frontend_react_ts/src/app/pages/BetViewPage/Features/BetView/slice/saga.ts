@@ -16,7 +16,7 @@ export function* getBet() {
     yield put(actions.betLoaded(betData));
   } catch (err: any) {
     if (err.response?.status === 404) {
-      yield put(actions.betLoadingError(err));
+      yield put(actions.betLoadingError(BetViewErrorType.NOT_FOUND_ERROR));
     } else {
       yield put(actions.betLoadingError(BetViewErrorType.RESPONSE_ERROR));
     }
