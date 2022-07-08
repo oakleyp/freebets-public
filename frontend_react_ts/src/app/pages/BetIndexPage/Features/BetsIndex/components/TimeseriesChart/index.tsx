@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Charts,
   ChartContainer,
@@ -11,7 +11,7 @@ import {
 } from 'react-timeseries-charts';
 // Typescript definition is missing some exports in library
 // @ts-ignore
-import { TimeSeries, percentile } from 'pondjs';
+import { TimeSeries, percentile, avg } from 'pondjs';
 import { format } from 'd3-format';
 
 import dayjs from 'dayjs';
@@ -33,15 +33,19 @@ export function TimeseriesChart({
 }: TimeseriesChartProps) {
   const tzGuess = dayjs.tz.guess();
 
-  const betMetaMap = bets.reduce(
-    (res, bet) => ({
-      ...res,
-      [bet.id]: {
-        dayjsInst: dayjs.utc(getEffectiveTS(bet)),
-        betInst: bet,
-      },
-    }),
-    {},
+  const betMetaMap = useMemo(
+    () =>
+      bets.reduce(
+        (res, bet) => ({
+          ...res,
+          [bet.id]: {
+            dayjsInst: dayjs.utc(getEffectiveTS(bet)),
+            betInst: bet,
+          },
+        }),
+        {},
+      ),
+    [bets],
   );
 
   function getBetFromPoint(point: any): any {
@@ -51,18 +55,21 @@ export function TimeseriesChart({
     return bet;
   }
 
-  const points = [...bets]
-    .sort(
-      (a, b) =>
-        betMetaMap[a.id].dayjsInst.tz(tzGuess).toDate() -
-        betMetaMap[b.id].dayjsInst.tz(tzGuess).toDate(),
-    )
-    .map(bet => [
-      betMetaMap[bet.id].dayjsInst.tz(dayjs.tz.guess()).toDate(),
-      bet.avg_reward / bet.cost,
-      bet.id,
-    ])
-    .filter(a => a[0]);
+  const points = useMemo(
+    () =>
+      [...bets]
+        .sort(
+          (a, b) =>
+            betMetaMap[a.id].dayjsInst.tz(tzGuess).toDate() -
+            betMetaMap[b.id].dayjsInst.tz(tzGuess).toDate(),
+        )
+        .map(bet => [
+          betMetaMap[bet.id].dayjsInst.tz(dayjs.tz.guess()).toDate(),
+          bet.avg_reward / bet.cost,
+          bet.id,
+        ]),
+    [bets, tzGuess, betMetaMap],
+  );
 
   const series = new TimeSeries({
     name: 'Bet',
