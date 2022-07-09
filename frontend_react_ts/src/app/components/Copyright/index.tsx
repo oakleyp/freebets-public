@@ -16,6 +16,11 @@ export function Copyright(props: any) {
       </Link>{' '}
       {new Date().getFullYear()}
       {'.'}
+      &nbsp; | &nbsp;
+      {'Documentation and code on '}
+      <Link color="inherit" href="https://github.com/oakleyp/freebets-public">
+        GitHub
+      </Link>
     </Typography>
   );
 }

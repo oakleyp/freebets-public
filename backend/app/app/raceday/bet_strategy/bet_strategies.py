@@ -271,7 +271,7 @@ class WinBet(BetTypeImpl):
             selection=[self.selection],
             max_reward=self.max_reward(),
             min_reward=self.min_reward(),
-            cost=self.outlay(),
+            cost=self.cost(),
             odds=self.odds(),
         )
 
@@ -318,6 +318,8 @@ class WinAllArbBet(BetTypeImpl):
         return min(b.max_reward() for b in self.bets)
 
     def avg_reward(self):
+        # This assumes that all horses have equal chance of winning,
+        # obviously need to weight by odds
         return sum(b.max_reward() for b in self.bets) / len(self.bets)
 
     def max_reward(self):
@@ -327,7 +329,7 @@ class WinAllArbBet(BetTypeImpl):
         return sum(b.min_bet() for b in self.bets)
 
     def cost(self):
-        return self.strategy.outlay_strategy.outlay(self)
+        return sum(b.cost() for b in self.bets)
 
     def odds(self):
         return 1
@@ -395,7 +397,7 @@ class WinBoxArbBet(BetTypeImpl):
 
     def cost(self):
         # TODO: outlay based on various leg odds?
-        return self.strategy.outlay_strategy.outlay(self)
+        return sum(b.cost() for b in self.bets)
 
     def result(self) -> MultiBetResult:
         return MultiBetResult(
