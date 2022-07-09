@@ -10120,9 +10120,10 @@ react-test-renderer@18.1.0:
     react-shallow-renderer "^16.15.0"
     scheduler "^0.22.0"
 
-"react-timeseries-charts@https://github.com/oakleyp/react-timeseries-charts.git":
-  version "0.16.0"
-  resolved "https://github.com/oakleyp/react-timeseries-charts.git#ac326e8e974f2936bf2b7c1ffab34e3a798526e6"
+react-timeseries-charts@0.16.1:
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/react-timeseries-charts/-/react-timeseries-charts-0.16.1.tgz#46675a41a7806155a0b5a1342e3b811172845a5c"
+  integrity sha512-WK2Pege5/FGrE5ifGX1XTVQOZkobRUV5YMwRQi4+TpYAALL5cBLp+XCuAX8x8agq4AmqChpClPIrANc8pRL5RA==
   dependencies:
     array.prototype.fill "^1.0.1"
     babel-runtime "^6.23.0"
