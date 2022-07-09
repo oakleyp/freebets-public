@@ -248,7 +248,9 @@ export function TimeseriesChart({
                     onSelectionChange={p => handleSelectionChanged(p)}
                     onMouseNear={p => handleMouseNear(p)}
                     highlight={highlight}
-                    radius={(event, column) => (column === 'ratio' ? 3 : 2)}
+                    radius={(event, column) =>
+                      window.screen.width >= 768 ? 3 : 5
+                    }
                   />
                 </Charts>
               </ChartRow>
