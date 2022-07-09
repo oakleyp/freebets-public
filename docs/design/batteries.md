@@ -1,6 +1,6 @@
 # Batteries
 
-There are two aspects of this project that, due to copywright law, I have to leave to the imagination of the reader. Implementing just `Live Racing` will allow this to be used as a technical betting platform, but in order to use predictive betting, both of the following are needed.
+There are two aspects of this project that, due to copyright law, I have to leave to the imagination of the reader. Implementing just `Live Racing` will allow this to be used as a technical betting platform, but in order to use predictive betting, both of the following are needed.
 
 ## Live Racing
 
@@ -12,7 +12,7 @@ In the `RaceDayProcessor` class, replace references to `LiveRacingClient` with y
 
 ## Historical Racing
 
-Compared to the Live Racing set up, this will require a substantial amount of work. I may find a way to better decouple the copywright-sensitive portions of the code in the future, but currently the codebase is not quite mature enough for the level of abstraction that would make this easier.
+Compared to the Live Racing set up, this will require a substantial amount of work. I may find a way to better decouple the copyright-sensitive portions of the code in the future, but currently the codebase is not quite mature enough for the level of abstraction that would make this easier.
 
 ### 1. Implement the Historical Client interface
 

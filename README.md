@@ -41,7 +41,7 @@ I also think that it may be valuable as:
 
 ## What Isn't Included?
 
-In compliance with copywright law, there are certain aspects of this project that cannot be redistributed:
+In compliance with copyright law, there are certain aspects of this project that cannot be redistributed:
 - Any code related to fetching live racing data
 - Any code related to fetching/parsing historical racing data
 
