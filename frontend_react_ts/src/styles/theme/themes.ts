@@ -9,6 +9,9 @@ const lightTheme: MUITheme = createTheme({
     secondary: {
       main: '#33dcb8',
     },
+    background: {
+      default: '#f5f5f5',
+    },
   },
 });
 
@@ -21,6 +24,9 @@ const darkTheme: MUITheme = createTheme({
     },
     secondary: {
       main: '#33dcb8',
+    },
+    background: {
+      default: '#212121',
     },
   },
 });

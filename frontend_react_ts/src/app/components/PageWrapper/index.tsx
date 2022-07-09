@@ -1,7 +1,7 @@
 import { AppBar } from 'app/components/AppBar/Loadable';
-import * as React from 'react';
+import React, { useRef } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
-import Box from '@mui/material/Box';
+import Box, { BoxProps } from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -19,6 +19,9 @@ import { selectThemeKey } from 'styles/theme/slice/selectors';
 import { DarkMode, LightMode } from '@mui/icons-material';
 import { saveTheme } from 'styles/theme/utils';
 import { ThemeProvider } from 'styles/theme/ThemeProvider';
+import { ScrollTopArrow } from 'app/components/ScrollTopArrow';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Fab from '@mui/material/Fab';
 
 const pages = [];
 const settings = ['Account', 'Logout'];
@@ -81,7 +84,7 @@ export function PageWrapper({ children }: Props) {
     <ThemeProvider>
       <>
         <CssBaseline />
-        <AppBar position="static">
+        <AppBar position="static" id="back-to-top-anchor">
           <Container maxWidth="xl">
             <Toolbar disableGutters>
               <Typography
@@ -219,14 +222,19 @@ export function PageWrapper({ children }: Props) {
                 ? theme.palette.grey[100]
                 : theme.palette.grey[900],
             flexGrow: 1,
-            height: '100vh',
-            overflow: 'auto',
+            pb: 1,
+            height: '100%',
           }}
         >
-          <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Container maxWidth="lg" sx={{ mt: 3, mb: 3 }}>
             {children}
           </Container>
         </Box>
+        <ScrollTopArrow>
+          <Fab size="small" aria-label="scroll back to top">
+            <KeyboardArrowUpIcon />
+          </Fab>
+        </ScrollTopArrow>
       </>
     </ThemeProvider>
   );
