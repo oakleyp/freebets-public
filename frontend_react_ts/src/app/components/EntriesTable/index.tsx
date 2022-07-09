@@ -309,7 +309,7 @@ export function EntriesTable({ rows, title }: EntriesTableProps) {
         <EnhancedTableToolbar numSelected={selected.length} title={title} />
         <TableContainer>
           <Table
-            sx={{ minWidth: 750 }}
+            sx={{ width: '100%' }}
             aria-labelledby="tableTitle"
             size={dense ? 'small' : 'medium'}
           >
