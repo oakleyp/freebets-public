@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Charts,
   ChartContainer,
@@ -32,6 +32,44 @@ export function TimeseriesChart({
   onSelection = () => {},
 }: TimeseriesChartProps) {
   const tzGuess = dayjs.tz.guess();
+
+  // function getTouchFrame() {
+  //   return document.getElementById("chart-cont");
+  // }
+
+  // function isEventInElement(event, element)   {
+  //     var rect = element.getBoundingClientRect();
+  //     console.log({rect});
+  //     var x = event.clientX;
+  //     if (x < rect.left || x >= rect.right) return false;
+  //     var y = event.clientY;
+  //     if (y < rect.top || y >= rect.bottom) return false;
+  //     return true;
+  // }
+
+  // function onTouchStart(e) {
+  //   console.log('touchstart', {e});
+  //   if (isEventInElement(e, getTouchFrame())) {
+  //     console.log('inframe');
+  //     e.preventDefault();
+  //   }
+  // }
+
+  // function onTouchEnd(e) {
+  //   if (isEventInElement(e, getTouchFrame())) {
+  //     e.preventDefault();
+  //   }
+  // }
+
+  // useEffect(() => {
+  //   window.addEventListener('touchstart', onTouchStart, {passive: false});
+  //   window.addEventListener('touchstart', onTouchEnd, {passive: false});
+
+  //   return () => {
+  //     window.removeEventListener('touchstart', onTouchStart);
+  //     window.removeEventListener('touchend', onTouchEnd);
+  //   }
+  // })
 
   const betMetaMap = useMemo(
     () =>
@@ -173,7 +211,7 @@ export function TimeseriesChart({
 
       <hr />
 
-      <div className="row">
+      <div id="chart-cont" className="row">
         <div className="col-md-12">
           <Resizable>
             <ChartContainer
@@ -193,6 +231,7 @@ export function TimeseriesChart({
               maxTime={series.timerange().end()}
               minTime={series.timerange().begin()}
               enablePanZoom={true}
+              enableDragZoom={true}
               onBackgroundClick={() => setSelection(null)}
               onTimeRangeChanged={timerange => setTimerange(timerange)}
               onTrackerChanged={tracker => setTracker(tracker)}
