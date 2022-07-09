@@ -55,7 +55,7 @@
     "react-router-dom": "5.2.0",
     "react-scripts": "5.0.1",
     "react-test-renderer": "18.1.0",
-    "react-timeseries-charts": "0.16.1",
+    "react-timeseries-charts": "https://github.com/oakleyp/react-timeseries-charts.git",
     "redux-injectors": "1.3.0",
     "redux-saga": "1.1.3",
     "rimraf": "3.0.2",
@@ -75,7 +75,7 @@
     "@mui/styled-engine": "npm:@mui/styled-engine-sc@latest"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "HOST=0.0.0.0 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

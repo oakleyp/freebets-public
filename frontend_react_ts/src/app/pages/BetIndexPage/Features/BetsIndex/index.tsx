@@ -209,7 +209,7 @@ export function BetIndex() {
     return (
       <>
         <Box sx={{ margin: '1em 0' }}>
-          {!loading && bets.singleBets.length && (
+          {!loading && !error && bets.singleBets.length && (
             <TimeseriesChart bets={allBets} onSelection={handleBetSelection} />
           )}
           {loading && (

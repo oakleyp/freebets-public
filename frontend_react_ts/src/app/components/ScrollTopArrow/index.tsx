@@ -14,7 +14,7 @@ export function ScrollTopArrow(props: Props) {
   // This is only being set here because the demo is in an iframe.
   const trigger = useScrollTrigger({
     disableHysteresis: true,
-    threshold: 100,
+    threshold: 10,
   });
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
