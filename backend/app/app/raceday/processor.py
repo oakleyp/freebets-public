@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.lib.clients.demo_live_racing_client import DemoLiveRacingClient
 from app.lib.clients.live_abstract import AbstractLiveRacingClient
 from app.lib.crawlers.live_racing import LiveRacingCrawler, LiveRacingCrawlerException
-from app.lib.schemas.live_racing import StarterDetails, TrackWithRaceDetails
+from app.lib.schemas.live_racing import RacePoolTotals, StarterDetails, TrackWithRaceDetails
 from app.ml.predictor.race_predictor import RacePredictor
 from app.models.bet import Bet
 from app.models.race import Race
@@ -243,6 +243,16 @@ class RaceDayProcessor:
 
                 continue
 
+            use_pool_totals = False
+
+            try:
+                self._ingest_race_pool_totals(race)
+                use_pool_totals = True
+            except LiveRacingCrawlerException:
+                logger.exception(
+                    "Failed to ingest race pool totals for %s", race, stack_info=True
+                )
+
             result_races.append(race)
 
             self._update_watcher(race, time_context)
@@ -382,7 +392,7 @@ class RaceDayProcessor:
 
         return races_to_refresh
 
-    def _refresh_race_bets(self, race: Race) -> List[Bet]:
+    def _refresh_race_bets(self, race: Race, use_pool_totals: bool = False) -> List[Bet]:
         """Regenerate bets for the given race."""
         existing_race_bets = (
             self.db.query(Bet).filter(Bet.race.has(Race.id == race.id)).all()
@@ -391,7 +401,7 @@ class RaceDayProcessor:
         for bet in existing_race_bets:
             self.db.delete(bet)
 
-        bet_gen = BetGen(race=race)
+        bet_gen = BetGen(race=race, use_pool_totals=True)
         bets = bet_gen.all_bets()
         result_bets: List[Bet] = []
 
@@ -510,6 +520,23 @@ class RaceDayProcessor:
         self.db.commit()
 
         race.entries = entries_canon
+        self.db.commit()
+
+    def _ingest_race_pool_totals(self, race: Race) -> RacePoolTotals:
+        """Refresh the race pool totals for the given race."""
+        pool_totals = self.live_race_crawler.get_race_pool_totals(race.track_code, race.race_number, race.race_type)
+
+        race.win_pool_total = pool_totals.win_total
+        race.place_pool_total = pool_totals.place_total
+        race.show_pool_total = pool_totals.show_total
+
+        for entry in race.entries:
+            entry_totals = pool_totals.entries_to_pools_map[entry.program_no]
+            entry.win_pool_total = entry_totals.win_total
+            entry.place_pool_total = entry_totals.place_total
+            entry.show_pool_total = entry_totals.show_total
+
+        self.db.add(race)
         self.db.commit()
 
     def _should_watch_race(self, race: Race, time_context: TimeContext) -> bool:

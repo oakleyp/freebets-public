@@ -73,6 +73,10 @@ class RaceEntry(Base):
     race_id = Column(Integer, ForeignKey("race.id", ondelete="CASCADE"), nullable=False)
     race = relationship("Race", back_populates="entries")
 
+    win_pool_total = Column(Float, default=0, nullable=False)
+    place_pool_total = Column(Float, default=0, nullable=False)
+    show_pool_total = Column(Float, default=0, nullable=False)
+
     def latest_odds(self) -> Optional[float]:
         return self.live_odds or self.morning_line_odds
 

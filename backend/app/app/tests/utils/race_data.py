@@ -6,8 +6,10 @@ import numpy as np
 from wonderwords import RandomWord
 
 from app.lib.schemas.live_racing import (
+    EntryPoolTotals,
     Featured,
     RaceDetails,
+    RacePoolTotals,
     RaceWithStarterDetails,
     StarterDetails,
     SurfaceConditions,
@@ -181,7 +183,7 @@ def create_race_and_starter_details_n(
     start = adjacent_dt_start
 
     if not start:
-        start = datetime.now(timezone.utc),
+        start = datetime.now(timezone.utc)
 
     if not adjacent:
         return [
@@ -250,7 +252,23 @@ def create_race_and_starter_details(
 
 
 def create_starters_n(n: int) -> List[StarterDetails]:
-    return [create_starter(n, n) for n in range(n)]
+    starters = [create_starter(n, n) for n in range(n)]
+
+    active_starters = [starter for starter in starters if not starter.scratched]
+
+    # Fix odds to sum to 1
+    odds = [random.randint(3, 50) for _ in active_starters]
+
+    odds_sum = sum(odds)
+    odds = [odds/odds_sum for odds in odds]
+
+    for starter, odds in zip(active_starters, odds):
+        starter.morningLineOdds = f"{1/odds}/1"
+        starter.profitlineOdds = f"{1/odds}/1"
+        starter.liveOdds = f"{1/odds}/1"
+
+    return starters
+
 
 
 def create_starter(horse_num: int, pp: int) -> StarterDetails:
@@ -327,7 +345,36 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         weightChange=[False, None, True][random.randint(0, 2)],
         weightCorrection=[False, None, True][random.randint(0, 2)],
         otherChange=[False, None, True][random.randint(0, 2)],
-        profitlineOdds=random_lower_string(length=12),
-        liveOdds=random_lower_string(length=12),
-        scratched=[True, False, False, False, False, False][random.randint(0, 5)],
+        profitlineOdds=create_random_odds_str(),
+        liveOdds=create_random_odds_str(),
+        scratched=[False, False, False, False, False, False][random.randint(0, 5)],
+    )
+
+def create_entry_pool_totals(entry: StarterDetails, num_betters: int = None) -> EntryPoolTotals:        
+    return EntryPoolTotals(
+        program_no=entry.programNumber,
+        win_total=random.randint(3000, 500_000),
+        place_total=random.randint(3000, 500_000),
+        show_total=random.randint(3000, 500_000),
+    )
+
+def create_race_pool_totals(race: RaceWithStarterDetails, num_betters: int = None) -> RacePoolTotals:
+    entries_totals = {
+        entry.programNumber: create_entry_pool_totals(entry) for entry in race.starters
+    }
+
+    win_total: float = 0
+    place_total: float = 0
+    show_total: float = 0
+
+    for totals in entries_totals.values():
+        win_total += totals.win_total
+        place_total += totals.place_total
+        show_total += totals.show_total
+
+    return RacePoolTotals(
+        win_total=win_total,
+        place_total=place_total,
+        show_total=show_total,
+        entries_to_pools_map=entries_totals,
     )

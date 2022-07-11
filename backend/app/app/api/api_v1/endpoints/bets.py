@@ -93,16 +93,19 @@ def read_bets(
         RaceDayRefreshLog
     ).order_by(RaceDayRefreshLog.next_check_time.desc()).first()
 
-    if latest_refresh_log:
+    now = datetime.now(timezone.utc)
+
+    # Get the time to next refresh from the latest processor refresh log.
+    # It may be in the past depending on when the processor last ran;
+    # use the max sleep time in that case.
+    if latest_refresh_log and latest_refresh_log.next_check_time >= now:
         nct: datetime = latest_refresh_log.next_check_time
         next_refresh_ts = int(nct.timestamp() * 1000)
+        # Add some time to account for the time to run the job
+        next_refresh_ts += settings.EXPECTED_PROCESS_TIME_SECS * 1000,
     else:
         next_refresh_ts = int(
-            (
-                datetime.now(timezone.utc)
-                + timedelta(seconds=settings.MAX_SLEEP_TIME_SECS)
-            ).timestamp()
-            * 1000
+            (now + timedelta(seconds=settings.MAX_SLEEP_TIME_SECS)).timestamp() * 1000
         )
 
     return BetsQueryResponse(
@@ -116,8 +119,7 @@ def read_bets(
         all_bet_types=all_bet_types,
         limit=limit,
         skip=skip,
-        next_refresh_ts=next_refresh_ts
-        + settings.EXPECTED_PROCESS_TIME_SECS * 1000,  # Leave some time for the job to run
+        next_refresh_ts=next_refresh_ts,
     )
 
 

@@ -17,6 +17,7 @@ class BetType(Enum):
     WIN_BET = (1,)
     ALL_WIN_ARB = (2,)
     BOX_WIN_ARB = (3,)
+    PLACE_SHOW_COMB = (4,)
 
     def to_json(self):
         return str(self)
@@ -30,6 +31,9 @@ class BetStrategyType(Enum):
     BOOK_WIN_BET = (4,)
     BOOK_ALL_WIN_ARB = (5,)
     BOOK_BOX_WIN_ARB = (6,)
+
+    BOOK_DR_Z_PLACE_SHOW_ARB = (7)
+    AI_DR_Z_PLACE_SHOW_ARB = (8,)
 
     def to_json(self):
         return str(self)
@@ -411,3 +415,29 @@ class WinBoxArbBet(BetTypeImpl):
             cost=self.cost(),
             odds=self.odds(),
         )
+
+class DrZPlaceShowArbBet(BetTypeImpl):
+    def __init__(
+        self,
+        *,
+        race: Race,
+        entries: List[RaceEntry],
+        selection: List[RaceEntry],
+        strategy: BetStrategy,
+    ) -> None:
+        self.race: Race = race
+        self.entries: List[RaceEntry] = entries
+        self.strategy: BetStrategy = strategy
+        self.selection: List[RaceEntry] = selection
+        self.bet_type: BetType = BetType.BOX_WIN_ARB
+        self.bet_strategy_type: BetStrategyType = BetStrategyType.
+
+        self.bets = [
+            WinBet(
+                race=self.race,
+                entries=self.entries,
+                selection=s,
+                strategy=self.strategy,
+            )
+            for s in self.selection
+        ]

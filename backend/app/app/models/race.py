@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
-from sqlalchemy import BigInteger, Column, Date, Integer, String
+from sqlalchemy import BigInteger, Column, Date, Integer, String, Float
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -37,12 +37,20 @@ class Race(Base):
     track_country = Column(String)
     race_type = Column(String, nullable=False)  # Thoroughbred, Harness, etc.
 
+    win_pool_total = Column(Float, default=0, nullable=False)
+    place_pool_total = Column(Float, default=0, nullable=False)
+    show_pool_total = Column(Float, default=0, nullable=False)
+
     entries = relationship(
         "RaceEntry", back_populates="race", cascade="all, delete-orphan", uselist=True
     )
     bets = relationship(
         "Bet", back_populates="race", cascade="all, delete-orphan", uselist=True
     )
+
+    def active_entries(self) -> List['RaceEntry']:
+        return [entry for entry in self.entries if not entry.scratched]
+        
 
     def __repr__(self) -> str:
         return self._repr(

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 from typing import List
 
-from app.lib.schemas.live_racing import StarterDetails, TrackWithRaceDetails
+from app.lib.schemas.live_racing import RacePoolTotals, RaceWithStarterDetails, StarterDetails, TrackWithRaceDetails
 
 
 class AbstractLiveRacingClientException(Exception):
@@ -33,4 +33,11 @@ class AbstractLiveRacingClient(ABC):
         """Get all races for a given date."""
         raise NotImplementedError(
             "get_races_by_date() not implemented for %s" % self.__class__.__name__
+        )
+
+    @abstractmethod
+    def get_race_pool_totals(self, track_code: str, race_no: str, type: str = "Thoroughbred") -> RacePoolTotals:
+        """Get the pool totals for a given race and track_code."""
+        raise NotImplementedError(
+            "get_race_pool_totals() not implemented for %s" % self.__class__.__name__
         )

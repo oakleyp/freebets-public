@@ -6,7 +6,7 @@ from app.lib.clients.live_abstract import (
     AbstractLiveRacingClient,
     AbstractLiveRacingClientException,
 )
-from app.lib.schemas.live_racing import StarterDetails, TrackWithRaceDetails
+from app.lib.schemas.live_racing import RacePoolTotals, StarterDetails, TrackWithRaceDetails
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,22 @@ class LiveRacingCrawler:
                 e,
             )
             raise LiveRacingCrawlerException(f"Failed to retrieve race entries - {e}")
+
+    def get_race_pool_totals(
+        self, track_code: str, race_no: int, race_type: str
+    ) -> RacePoolTotals:
+        try:
+            return self.client.get_race_pool_totals(track_code, race_no, type=race_type)
+        except AbstractLiveRacingClientException as e:
+            logger.error(
+                "Error looking up race pool totals for (track_code=%s, race_no=%d, race_type=%s) - %s",
+                track_code,
+                race_no,
+                race_type,
+                e,
+            )
+            raise LiveRacingCrawlerException(f"Failed to retrieve race entries - {e}")
+
 
     def get_all_track_races_shallow(
         self, *, track_codes: List[str] = [], target_date: date = None,
