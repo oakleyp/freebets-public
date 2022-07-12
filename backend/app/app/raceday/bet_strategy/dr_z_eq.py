@@ -6,8 +6,9 @@ from app.models.race_entry import RaceEntry
 import hyperopt
 from pydantic import BaseModel
 
-# Track Rebate
-Q = 0
+# Track Payback (1 - (track take % / 100))
+# This assumes 17% track take
+Q = 0.83
 
 # Based on Dr. Z's place-show optimization formula
 
@@ -31,11 +32,12 @@ def get_place_show_all_utility(race: Race, place_outlay: float, show_outlay: flo
 
                 k_total: float = 0
 
-                qi = 1 / entries[i].latest_odds()
-                qj = 1 / entries[j].latest_odds()
-                qk = 1 / entries[k].latest_odds()
+                q_i = 1 / entries[i].latest_odds()
+                q_j = 1 / entries[j].latest_odds()
+                q_k = 1 / entries[k].latest_odds()
                 
-                harville_prob_place_show = (qi * qj * qk) /  ((1-qi) * (1-qi-qj))
+                # TODO: Is there a better alternative to harville probability?
+                harville_prob_place_show = (q_i * q_j * q_k) /  ((1-q_i) * (1-q_i-q_j))
                 rebate = calc_rebate(race, entries, place_outlay, show_outlay, i, j, k, total_wealth)
                 
                 k_total += (harville_prob_place_show * math.log(rebate))
@@ -67,33 +69,30 @@ def calc_rebate(race: Race, entries: List[RaceEntry], place_outlay: float, show_
     S_ijk = S_i + S_j + S_k
 
     player_place_total_outlay = sum([p_l(i) for i in range(len(entries))])
-
-    first = ((Q * (P + player_place_total_outlay)) - (p_i + p_j + P_ij)) / 2
-    second = (p_i / (p_i + P_i)) + (p_j / (p_j + P_j))
+    place_bet_return = ((Q * (P + player_place_total_outlay)) - (p_i + p_j + P_ij)) / 2
+    place_bet_effect = (p_i / (p_i + P_i)) + (p_j / (p_j + P_j))
 
     player_show_total_outlay = sum([s_l(i) for i in range(len(entries))])
-    third = ((Q * (S + player_show_total_outlay)) - (s_i + s_j + s_k + S_ijk)) / 3
+    show_bet_return = ((Q * (S + player_show_total_outlay)) - (s_i + s_j + s_k + S_ijk)) / 3
+    show_bet_effect = (s_i / (s_i + S_i)) + (s_j / (s_j + S_j)) + (s_k / (s_k + S_k))
 
-    fourth = (s_i / (s_i + S_i)) + (s_j / (s_j + S_j)) + (s_k / (s_k + S_k))
-
-    outer_total: float = 0
+    sum_s_l: float = 0
     for i_2 in range(len(entries)):
         if i_2 == i or i_2 == j or i_2 == k:
             continue
-
-        inner_total: float = 0
-        
-        for i_3 in range(len(entries)):
-            if i_3 == i_2 or i_3 == j:
-                continue
-
-            inner_total += p_l(i_3)
-        
-        outer_total += (s_l(i_2) - inner_total)
-
-    fifth = outer_total
     
-    total = first * second + third * fourth + w0 - fifth
+        sum_s_l += s_l(i_2)
+        
+    sum_p_l: float = 0
+    for i_2 in range(len(entries)):
+        if i_2 == i or i_2 == j:
+            continue
+            
+        sum_p_l += p_l(i_2)
+    
+    total = (place_bet_return * place_bet_effect) + (show_bet_return * show_bet_effect) + (w0 - sum_s_l - sum_p_l)
+
+    assert total > 0, f"domain error: pl={p_l(0)}; sl={s_l(0)}; ({place_bet_return} * {place_bet_effect} = {place_bet_return * place_bet_effect}) + ({show_bet_return} * {show_bet_effect} = {show_bet_return * show_bet_effect}) + {w0} - {sum_s_l} - {sum_p_l} = {total}"
     
     return total
 
@@ -137,11 +136,11 @@ def get_best_place_show_bets_all(race: Race, max_spend: float) -> DrZPlaceShowRe
         trials=trials,
     )
 
-    total_outlay = best['total_wealth']
+    total_outlay = max_spend
     place_outlay = best['place_outlay']
     show_outlay = best['show_outlay']
 
-    expected_value = get_place_show_all_utility(place_outlay, show_outlay, total_outlay)
+    expected_value = get_place_show_all_utility(race, place_outlay, show_outlay, total_outlay)
 
     return DrZPlaceShowResult(
         total_outlay=total_outlay,

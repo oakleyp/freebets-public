@@ -27,6 +27,16 @@ interface TimeseriesChartProps {
   onSelection?: Function | null;
 }
 
+function betTrackCode(bet) {
+  if (bet.sub_bets) {
+    return [
+      ...new Set(bet.sub_bets.map(b => b.race.track_code.toUpperCase())),
+    ].join(' | ');
+  }
+
+  return bet.race.track_code.toUpperCase();
+}
+
 export function TimeseriesChart({
   bets,
   onSelection = () => {},
@@ -134,7 +144,7 @@ export function TimeseriesChart({
 
     infoValues = [
       { label: 'Ratio', value: speedText },
-      { label: 'Track', value: bet.race.track_code.toUpperCase() },
+      { label: 'Track', value: betTrackCode(bet) },
     ];
   }
 

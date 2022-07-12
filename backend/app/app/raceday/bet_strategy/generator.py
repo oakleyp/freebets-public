@@ -1,32 +1,39 @@
 from itertools import combinations
 from typing import List
+import logging
 
 from app.models.race import Race
+from app.models.race_entry import RaceEntry
 
 from .bet_strategies import (
     AvgCostRewardSortStrategy,
     BetStrategy,
+    BetTypeImpl,
     FlatBetOutlayStrategy,
     WinAllArbBet,
     WinBoxArbBet,
+    DrZPlaceShowArbBet
 )
 
 DefaultBetStrategy = BetStrategy(
     outlay_strategy=FlatBetOutlayStrategy(), sort_strategy=AvgCostRewardSortStrategy(),
 )
 
+logger = logging.getLogger(__name__)
+
 
 class BetGen:
     def __init__(
-        self, *, race: Race, strategy: BetStrategy = DefaultBetStrategy,
+        self, *, race: Race, strategy: BetStrategy = DefaultBetStrategy, use_pool_totals: bool = False
     ) -> None:
         self.race = race
         self.strategy = strategy
+        self.use_pool_totals = use_pool_totals
 
-    def active_entries(self):
+    def active_entries(self) -> List[RaceEntry]:
         return [entry for entry in self.race.entries if not entry.scratched]
 
-    def all_bets(self):
+    def all_bets(self) -> List[BetTypeImpl]:
         # There shouldn't be a race with all scratches,
         # but that's not the generator's concern
         if len(self.active_entries()) < 1:
@@ -34,7 +41,7 @@ class BetGen:
 
         return self.arbitrage_bets()
 
-    def arbitrage_bets(self):
+    def arbitrage_bets(self) -> List[BetTypeImpl]:
         result = [
             WinAllArbBet(
                 race=self.race, entries=self.active_entries(), strategy=self.strategy
@@ -42,12 +49,26 @@ class BetGen:
         ]
 
         # result.extend(self.win_box_bet_gen())
+        if self.use_pool_totals:
+            result.extend(self.dr_z_bets())
 
         return result
 
+    def dr_z_bets(self) -> List[BetTypeImpl]:
+        try:
+            if not self.race.has_valid_pool_totals():
+                logger.debug("Got race with incomplete pool totals: %s", self.race)
+                logger.debug("Entries: %s", self.race.entries)
+
+                return []
+
+            return [DrZPlaceShowArbBet(race=self.race, entries=self.active_entries(), selection=self.active_entries(), strategy=self.strategy)]
+        except ValueError:
+            return []
+
     def win_box_bet_gen(
         self, min_depth: int = 2, max_depth: int = 8
-    ) -> List[WinBoxArbBet]:
+    ) -> List[BetTypeImpl]:
         """
             Generate all possible bets for a boxed win bet.
 

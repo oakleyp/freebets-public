@@ -36,7 +36,7 @@ class AbstractLiveRacingClient(ABC):
         )
 
     @abstractmethod
-    def get_race_pool_totals(self, track_code: str, race_no: str, type: str = "Thoroughbred") -> RacePoolTotals:
+    def get_race_pool_totals(self, track_code: str, race_no: int, type: str = "Thoroughbred") -> RacePoolTotals:
         """Get the pool totals for a given race and track_code."""
         raise NotImplementedError(
             "get_race_pool_totals() not implemented for %s" % self.__class__.__name__

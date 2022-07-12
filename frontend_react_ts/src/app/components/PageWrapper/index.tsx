@@ -100,7 +100,7 @@ export function PageWrapper({ children }: Props) {
                   textDecoration: 'none',
                 }}
               >
-                Freebets
+                <sub>ijk</sub>Bets
               </Typography>
 
               {/* <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
@@ -153,7 +153,7 @@ export function PageWrapper({ children }: Props) {
                   textDecoration: 'none',
                 }}
               >
-                Freebets
+                <sub>ijk</sub>Bets
               </Typography>
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
                 {pages.map(page => (

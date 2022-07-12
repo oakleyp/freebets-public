@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app import schemas
@@ -27,10 +28,10 @@ router = APIRouter()
 # DEFAULT_TRACK_CODES = ["kee", "cd", "mrn"]
 DEFAULT_TRACK_CODES = []
 DEFAULT_BET_STRAT_TYPES = list(
-    map(str, [BetStrategyType.BOOK_ALL_WIN_ARB, BetStrategyType.BOOK_BOX_WIN_ARB],)
+    map(str, [BetStrategyType.BOOK_ALL_WIN_ARB, BetStrategyType.BOOK_BOX_WIN_ARB, BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB],)
 )
 DEFAULT_BET_TYPES = list(
-    map(str, [BetType.ALL_WIN_ARB, BetType.BOX_WIN_ARB, BetType.WIN_BET])
+    map(str, [BetType.ALL_WIN_ARB, BetType.BOX_WIN_ARB, BetType.WIN_BET, BetType.SHOW_BET, BetType.WIN_BET, BetType.PLACE_SHOW_ARB])
 )
 
 
@@ -47,7 +48,7 @@ def read_bets(
     """
     Retrieve items.
     """
-    all_bets_q = db.query(Bet)
+    all_bets_q = db.query(Bet).filter(Bet.parent_id == None)
 
     if len(bet_types) > 0:
         all_bets_q = all_bets_q.filter(Bet.bet_type.in_(bet_types))
@@ -102,7 +103,7 @@ def read_bets(
         nct: datetime = latest_refresh_log.next_check_time
         next_refresh_ts = int(nct.timestamp() * 1000)
         # Add some time to account for the time to run the job
-        next_refresh_ts += settings.EXPECTED_PROCESS_TIME_SECS * 1000,
+        next_refresh_ts += settings.EXPECTED_PROCESS_TIME_SECS * 1000
     else:
         next_refresh_ts = int(
             (now + timedelta(seconds=settings.MAX_SLEEP_TIME_SECS)).timestamp() * 1000

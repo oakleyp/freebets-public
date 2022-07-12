@@ -87,3 +87,19 @@ class RaceEntry(Base):
             return "morningline"
 
         return None
+
+    def has_valid_pool_totals(self) -> bool:
+        if not (self.win_pool_total > 0 and self.place_pool_total > 0 and self.show_pool_total > 0):
+            return False
+
+        return True
+
+    def __repr__(self) -> str:
+        return self._repr(
+            id=self.id,
+            name=self.name,
+            program_no=self.program_no,
+            win_pool_total=self.win_pool_total,
+            place_pool_total=self.place_pool_total,
+            show_pool_total=self.show_pool_total,
+        )

@@ -246,8 +246,9 @@ class RaceDayProcessor:
             use_pool_totals = False
 
             try:
-                self._ingest_race_pool_totals(race)
-                use_pool_totals = True
+                if race.current_race:
+                    self._ingest_race_pool_totals(race)
+                    use_pool_totals = True
             except LiveRacingCrawlerException:
                 logger.exception(
                     "Failed to ingest race pool totals for %s", race, stack_info=True
@@ -261,7 +262,7 @@ class RaceDayProcessor:
             self._refresh_race_predictions(race)
 
             logger.debug("Regenerating bets for race %s", race)
-            created_bets = self._refresh_race_bets(race)
+            created_bets = self._refresh_race_bets(race, use_pool_totals=use_pool_totals)
             result_bets.extend(created_bets)
 
         min_nct = self._get_min_watcher_nct()
@@ -401,7 +402,7 @@ class RaceDayProcessor:
         for bet in existing_race_bets:
             self.db.delete(bet)
 
-        bet_gen = BetGen(race=race, use_pool_totals=True)
+        bet_gen = BetGen(race=race, use_pool_totals=use_pool_totals)
         bets = bet_gen.all_bets()
         result_bets: List[Bet] = []
 

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import BigInteger, Column, Date, Integer, String, Float
+from sqlalchemy import BigInteger, Boolean, Column, Date, Integer, String, Float
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -28,6 +28,7 @@ class Race(Base):
     description = Column(String)
     wagers = Column(String)
     country = Column(String, index=True)
+    current_race = Column(Boolean, default=False, nullable=False, index=True)
     # TODO op:
     # carryoverPool
     # currentRace?
@@ -50,7 +51,16 @@ class Race(Base):
 
     def active_entries(self) -> List['RaceEntry']:
         return [entry for entry in self.entries if not entry.scratched]
-        
+
+    def has_valid_pool_totals(self) -> bool:
+        if not (self.win_pool_total > 0 and self.place_pool_total > 0 and self.show_pool_total > 0):
+            return False
+
+        for entry in self.entries:
+            if not entry.has_valid_pool_totals():
+                return False
+
+        return True
 
     def __repr__(self) -> str:
         return self._repr(
@@ -59,4 +69,8 @@ class Race(Base):
             race_date=self.race_date,
             track_code=self.track_code,
             post_time=self.post_time,
+            current_race=self.current_race,
+            win_pool_total=self.win_pool_total,
+            place_pool_total=self.place_pool_total,
+            show_pool_total=self.show_pool_total,
         )
