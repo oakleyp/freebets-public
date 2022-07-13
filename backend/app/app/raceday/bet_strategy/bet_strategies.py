@@ -4,7 +4,7 @@ from itertools import combinations, permutations
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Union
+from typing import Any, List, Tuple, Union
 
 from app.models.bet import Bet
 from app.models.race import Race
@@ -153,15 +153,66 @@ class MultiBetResult:
 
         return root_bet
 
+class BetOutlayStrategy(ABC):
+    @abstractmethod
+    def outlay(self, bet: 'BetTypeImpl') -> float:
+        """Determine the outlay (money down) for the given bet."""
+        raise NotImplementedError(
+            "outlay() not implemented for %s" % self.__class__.__name__
+        )
+
+
+class BetSortStrategy(ABC):
+    @abstractmethod
+    def sort(self, bets: List['BetTypeImpl']) -> List['BetTypeImpl']:
+        """Sort the given bets using a defined strategy, in order of best to worst."""
+        raise NotImplementedError(
+            "sort() not implemented for %s" % self.__class__.__name__
+        )
+
+
+class BetStrategy:
+    def __init__(
+        self,
+        *,
+        outlay_strategy: BetOutlayStrategy = None,
+        sort_strategy: BetSortStrategy = None,
+    ) -> None:
+        self.outlay_strategy = outlay_strategy
+        self.sort_strategy = sort_strategy
+
+
+class FlatBetOutlayStrategy(BetOutlayStrategy):
+    def __init__(self, *, outlay: float = 2) -> None:
+        super().__init__()
+        self._outlay = outlay
+
+    def outlay(self, bet: 'BetTypeImpl') -> float:
+        """Return a static outlay."""
+        return self._outlay
+
+
+class AvgCostRewardSortStrategy(BetSortStrategy):
+    """Strategy that sorts bets in order of their cost/avg_reward ratio (best first)."""
+
+    def sort(self, bets: List['BetTypeImpl']) -> List['BetTypeImpl']:
+        return sorted(bets, key=lambda a: a.cost() / (a.avg_reward() or 1))
 
 class BetTypeImpl(ABC):
-    def __init__(self, race: Race, horses: List[RaceEntry], selection: List[RaceEntry]):
+    def __init__(self, *, race: Race, horses: List[RaceEntry], selection: List[RaceEntry], strategy: BetStrategy):
         self.race = race
         self.horses = horses
         self.selection = selection
+        self.strategy = strategy
 
     def effective_proba(self) -> float:
         return 1 / self.odds()
+
+    def outlay(self) -> float:
+        return self.strategy.outlay_strategy.outlay(self)
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}(cost={self.cost()}, min_reward={self.min_reward()}, avg_reward={self.avg_reward()}, max_reward={self.max_reward()})>"
 
     @abstractmethod
     def odds(self) -> float:
@@ -203,52 +254,6 @@ class BetTypeImpl(ABC):
         raise NotImplementedError(
             "result() not implemented for %s" % self.__class__.__name__
         )
-
-
-class BetOutlayStrategy(ABC):
-    @abstractmethod
-    def outlay(self, bet: BetTypeImpl) -> float:
-        """Determine the outlay (money down) for the given bet."""
-        raise NotImplementedError(
-            "outlay() not implemented for %s" % self.__class__.__name__
-        )
-
-
-class BetSortStrategy(ABC):
-    @abstractmethod
-    def sort(self, bets: List[BetTypeImpl]) -> List[BetTypeImpl]:
-        """Sort the given bets using a defined strategy, in order of best to worst."""
-        raise NotImplementedError(
-            "sort() not implemented for %s" % self.__class__.__name__
-        )
-
-
-class BetStrategy:
-    def __init__(
-        self,
-        *,
-        outlay_strategy: BetOutlayStrategy = None,
-        sort_strategy: BetSortStrategy = None,
-    ) -> None:
-        self.outlay_strategy = outlay_strategy
-        self.sort_strategy = sort_strategy
-
-
-class FlatBetOutlayStrategy(BetOutlayStrategy):
-    def __init__(self, *, outlay: float = 2) -> None:
-        super().__init__()
-        self._outlay = outlay
-
-    def outlay(self, bet: BetTypeImpl) -> float:
-        """Return a static outlay."""
-        return self._outlay
-
-
-class AvgCostRewardSortStrategy(BetSortStrategy):
-    """Strategy that sorts bets in order of their cost/avg_reward ratio (best first)."""
-
-    def sort(self, bets: List[BetTypeImpl]) -> List[BetTypeImpl]:
-        return sorted(bets, key=lambda a: a.cost() / (a.avg_reward() or 1))
 
 
 class WinBet(BetTypeImpl):
@@ -527,7 +532,7 @@ class PlaceBet(BetTypeImpl):
         # if this bet is already targetting it, so the remaining pool 
         # is large as possible
         entries_worst = self.entries.copy()
-        entries_worst.sort(key=lambda e: e.latest_odds(), reverse=True)
+        entries_worst.sort(key=lambda e: e.place_pool_total)
         other_horse = entries_worst[0] if not entries_worst[0].id == selection.id else entries_worst[1]
 
         # Get remaining pool to be distributed by subtracting 2 place horses from net place pool
@@ -542,7 +547,7 @@ class PlaceBet(BetTypeImpl):
         # unit size 1 -> 2 for $2 bets
         indiv_payout *= 2
 
-        return indiv_payout + self.strategy.outlay_strategy.outlay(self)
+        return indiv_payout
 
     def min_bet(self) -> float:
         return sum(b.min_bet() for b in self.bets)
@@ -599,7 +604,7 @@ class ShowBet(BetTypeImpl):
         # if this bet is already targetting it, so the remaining pool 
         # is large as possible
         entries_worst = self.entries.copy()
-        entries_worst.sort(key=lambda e: e.latest_odds(), reverse=True)
+        entries_worst.sort(key=lambda e: e.show_pool_total)
         other_horse = entries_worst[0] if not entries_worst[0].id == selection.id else entries_worst[1]
         third_horse = entries_worst[1] if not entries_worst[0].id == selection.id else entries_worst[2]
 
@@ -607,7 +612,7 @@ class ShowBet(BetTypeImpl):
         pool_dividend = total_show_pool - (other_horse.show_pool_total + selection.show_pool_total + third_horse.show_pool_total)
 
         # 3 winners, since this is show, divide by 3
-        pool_split = pool_dividend / 2
+        pool_split = pool_dividend / 3
 
         # Divide the remaining split among the winners
         indiv_payout = pool_split / selection.show_pool_total
@@ -615,7 +620,7 @@ class ShowBet(BetTypeImpl):
         # unit size 1 -> 2 for $2 bets
         indiv_payout *= 2
 
-        return indiv_payout + self.strategy.outlay_strategy.outlay(self)
+        return indiv_payout
 
     def min_bet(self) -> float:
         return sum(b.min_bet() for b in self.bets)
@@ -667,18 +672,17 @@ class DrZPlaceShowArbBet(BetTypeImpl):
         self.place_strat = BetStrategy(outlay_strategy=place_outlay_strat, sort_strategy=self.strategy.sort_strategy)
         self.show_strat = BetStrategy(outlay_strategy=show_outlay_strat, sort_strategy=self.strategy.sort_strategy)
 
-        self.bets = self._generate_bets(self.dr_z_result)
+        (self.place_bets, self.show_bets) = self._generate_bets()
 
-    def _generate_bets(self, dr_z_result: DrZPlaceShowResult) -> List[BetTypeImpl]:
-        result: List[BetTypeImpl] = []
+    def _generate_bets(self) -> Tuple[List[BetTypeImpl], List[BetTypeImpl]]:
+        place_results: List[BetTypeImpl] = []
+        show_results: List[BetTypeImpl] = []
 
         for entry in self.entries:
-            result.extend([
-                PlaceBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.place_strat),
-                ShowBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.show_strat)
-            ])
+            place_results.append(PlaceBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.place_strat))
+            show_results.append(ShowBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.show_strat))
 
-        return result
+        return (place_results, show_results)
 
     def min_reward(self) -> float:
         return min(b.max_reward() for b in self.bets)
@@ -689,27 +693,28 @@ class DrZPlaceShowArbBet(BetTypeImpl):
     def max_reward(self) -> float:
         # Generate place and show bets for the lowest odds 3 horses
         entries_sorted = self.entries.copy()
-        entries_sorted.sort(key=lambda e: e.latest_odds(), reverse=True)
+        entries_sorted.sort(key=lambda e: e.show_pool_total + e.place_pool_total)
         lowest_3 = entries_sorted[0:3]
 
-        bets1 = [
-            PlaceBet(race=self.race, entries=self.entries, selection=[lowest_3[0]], strategy=self.place_strat),
-            ShowBet(race=self.race, entries=self.entries, selection=[lowest_3[0]], strategy=self.show_strat)
-        ]
-        bets2 = [
-            PlaceBet(race=self.race, entries=self.entries, selection=[lowest_3[1]], strategy=self.place_strat),
-            ShowBet(race=self.race, entries=self.entries, selection=[lowest_3[1]], strategy=self.show_strat)
-        ]
-        bets3 = [
-            ShowBet(race=self.race, entries=self.entries, selection=[lowest_3[2]], strategy=self.show_strat)
-        ]
+        place_sorted = self.place_bets
+        show_sorted = self.show_bets
 
-        comb_bets = []
+        # print(place_sorted)
+        # print(show_sorted)
 
-        for bets in (bets1, bets2, bets3):
-            comb_bets.extend(bets)
+        place_sorted.sort(key=lambda b: b.max_reward(), reverse=True)
+        show_sorted.sort(key=lambda b: b.max_reward(), reverse=True)
 
-        return sum([bet.max_reward() for bet in comb_bets])
+        place_winners = place_sorted[0:2]
+        show_winners = show_sorted[0:3]
+
+        winners: List[BetTypeImpl] = []
+        winners.extend(place_winners)
+        winners.extend(show_winners)
+
+        print(winners)
+
+        return sum([bet.max_reward() + bet.outlay() for bet in winners])
 
     def min_bet(self) -> float:
         return self.dr_z_result.total_outlay

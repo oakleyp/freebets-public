@@ -102,4 +102,5 @@ class RaceEntry(Base):
             win_pool_total=self.win_pool_total,
             place_pool_total=self.place_pool_total,
             show_pool_total=self.show_pool_total,
+            odds=self.latest_odds(),
         )

@@ -350,17 +350,24 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         scratched=[False, False, False, False, False, False][random.randint(0, 5)],
     )
 
-def create_entry_pool_totals(entry: StarterDetails, num_betters: int = None) -> EntryPoolTotals:        
+def create_entry_pool_totals(entry: StarterDetails, pool_total: int = 2_000_000, num_betters: int = None) -> EntryPoolTotals:
+    entry_odds_frac = 1 / entry.liveOddsNumeric()
+
+    def rand_variance():
+        return 1 / random.randint(5, 20)
+
     return EntryPoolTotals(
         program_no=entry.programNumber,
-        win_total=random.randint(3000, 500_000),
-        place_total=random.randint(3000, 500_000),
-        show_total=random.randint(3000, 500_000),
+        win_total=(pool_total * entry_odds_frac),
+        place_total=(pool_total * entry_odds_frac), 
+        show_total=(pool_total * entry_odds_frac),
     )
 
 def create_race_pool_totals(race: RaceWithStarterDetails, num_betters: int = None) -> RacePoolTotals:
+    pool_total = random.randint(30_000, 2_000_000)
+
     entries_totals = {
-        entry.programNumber: create_entry_pool_totals(entry) for entry in race.starters
+        entry.programNumber: create_entry_pool_totals(entry, pool_total=pool_total) for entry in race.starters
     }
 
     win_total: float = 0
