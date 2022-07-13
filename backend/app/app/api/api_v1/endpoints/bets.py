@@ -28,10 +28,10 @@ router = APIRouter()
 # DEFAULT_TRACK_CODES = ["kee", "cd", "mrn"]
 DEFAULT_TRACK_CODES = []
 DEFAULT_BET_STRAT_TYPES = list(
-    map(str, [BetStrategyType.BOOK_ALL_WIN_ARB, BetStrategyType.BOOK_BOX_WIN_ARB, BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB],)
+    map(str, [BetStrategyType.BOOK_ALL_WIN_ARB, BetStrategyType.BOOK_BOX_WIN_ARB, BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB, BetStrategyType.BOOK_DR_Z_PLACE_BET, BetStrategyType.BOOK_DR_Z_SHOW_BET],)
 )
 DEFAULT_BET_TYPES = list(
-    map(str, [BetType.ALL_WIN_ARB, BetType.BOX_WIN_ARB, BetType.WIN_BET, BetType.SHOW_BET, BetType.WIN_BET, BetType.PLACE_SHOW_ARB])
+    map(str, [BetType.ALL_WIN_ARB, BetType.BOX_WIN_ARB, BetType.WIN_BET, BetType.PLACE_BET, BetType.SHOW_BET, BetType.PLACE_SHOW_ARB])
 )
 
 

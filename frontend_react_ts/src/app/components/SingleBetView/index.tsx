@@ -21,14 +21,18 @@ import { getEffectiveTS } from 'utils/bets';
 
 interface Props {
   bet: SingleBet;
+  dense?: boolean | null;
 }
 
-export function SingleBetView({ bet }: Props) {
+export function SingleBetView({ bet, dense = false }: Props) {
   return (
     <>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <EntriesTable rows={bet.active_entries} title="Active Entries" />
+          <EntriesTable defaultDense={dense} rows={bet.active_entries} title="Active Entries" />
+        </Grid>
+        <Grid item xs={12}>
+          <EntriesTable defaultDense={dense} defaultExpanded={false} rows={bet.inactive_entries} title="Inactive Entries" />
         </Grid>
         <Grid item xl={6} md={12} xs={12}>
           <Paper>

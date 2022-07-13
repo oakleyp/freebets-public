@@ -4,12 +4,12 @@ from itertools import combinations, permutations
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from app.models.bet import Bet
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
-from app.raceday.bet_strategy.dr_z_eq import DrZPlaceShowResult, get_best_place_show_bets_all
+from app.raceday.bet_strategy.dr_z_eq import get_expected_place_val_per_dollar, get_expected_show_val_per_dollar
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -21,7 +21,7 @@ class BetType(Enum):
     BOX_WIN_ARB = (3,)
     PLACE_BET = (4,)
     SHOW_BET = (5,)
-    PLACE_SHOW_ARB = (6, )
+    PLACE_SHOW_ARB = (6,)
 
     def to_json(self):
         return str(self)
@@ -41,6 +41,9 @@ class BetStrategyType(Enum):
 
     BOOK_PLACE_BET = (9,)
     BOOK_SHOW_BET = (10,)
+
+    BOOK_DR_Z_PLACE_BET = (11, )
+    BOOK_DR_Z_SHOW_BET = (12, )
 
     def to_json(self):
         return str(self)
@@ -352,7 +355,7 @@ class WinAllArbBet(BetTypeImpl):
     def avg_reward(self):
         # This assumes that all horses have equal chance of winning,
         # obviously need to weight by odds
-        return sum(b.max_reward() for b in self.bets) / len(self.bets)
+        return sum((b.max_reward() + b.outlay()) * b.effective_proba() for b in self.bets) / len(self.bets)
 
     def max_reward(self):
         return max(b.max_reward() for b in self.bets)
@@ -573,6 +576,18 @@ class PlaceBet(BetTypeImpl):
         )
 
 
+class DrZPlaceBet(PlaceBet):
+    def __init__(self, *, race: Race, entries: List[RaceEntry], selection: List[RaceEntry], strategy: BetStrategy) -> None:
+        super().__init__(race=race, entries=entries, selection=selection, strategy=strategy)
+        self.bet_strategy_type = BetStrategyType.BOOK_DR_Z_PLACE_BET
+
+    def expected_place_val_per_dollar(self) -> float:
+        return get_expected_place_val_per_dollar(self.race, self.selection)
+
+    def avg_reward(self) -> float:
+        return self.expected_place_val_per_dollar() * self.outlay()
+
+
 class ShowBet(BetTypeImpl):
     def __init__(
         self,
@@ -646,6 +661,18 @@ class ShowBet(BetTypeImpl):
         )
 
 
+class DrZShowBet(ShowBet):
+    def __init__(self, *, race: Race, entries: List[RaceEntry], selection: List[RaceEntry], strategy: BetStrategy) -> None:
+        super().__init__(race=race, entries=entries, selection=selection, strategy=strategy)
+        self.bet_strategy_type = BetStrategyType.BOOK_DR_Z_SHOW_BET
+
+    def expected_show_val_per_dollar(self) -> float:
+        return get_expected_show_val_per_dollar(self.race, self.selection)
+
+    def avg_reward(self) -> float:
+        return self.expected_show_val_per_dollar() * self.outlay()
+
+
 class DrZPlaceShowArbBet(BetTypeImpl):
     def __init__(
         self,
@@ -662,45 +689,54 @@ class DrZPlaceShowArbBet(BetTypeImpl):
         self.bet_type: BetType = BetType.PLACE_SHOW_ARB
         self.bet_strategy_type: BetStrategyType = BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB
 
-        # TODO: better use of outlay strat for max starting wealth
-        self.dr_z_result = get_best_place_show_bets_all(race, self.strategy.outlay_strategy.outlay(self) * 4 * len(self.entries))
-        logger.debug("Got dr z result for place_show_arb: %s", self.dr_z_result)
+        (self.place_bets, self.show_bets) = self._generate_viable_bets()
+        self.bets = (list(self.place_bets.values()) + list(self.show_bets.values()))
 
-        place_outlay_strat = FlatBetOutlayStrategy(outlay=self.dr_z_result.place_outlay)
-        show_outlay_strat = FlatBetOutlayStrategy(outlay=self.dr_z_result.show_outlay)
+    def _generate_viable_bets(self) -> Tuple[Dict[int, BetTypeImpl], Dict[int, BetTypeImpl]]:
+        """Generates all place and show bets where the expected return is greater than 1."""
+        place_entries: List[RaceEntry] = []
+        show_entries: List[RaceEntry] = []
+        
+        for entry in self.race.entries:
+            if get_expected_place_val_per_dollar(self.race, entry) > 1:
+                place_entries.append(entry)
 
-        self.place_strat = BetStrategy(outlay_strategy=place_outlay_strat, sort_strategy=self.strategy.sort_strategy)
-        self.show_strat = BetStrategy(outlay_strategy=show_outlay_strat, sort_strategy=self.strategy.sort_strategy)
+            if get_expected_show_val_per_dollar(self.race, entry) > 1:
+                show_entries.append(entry)
 
-        (self.place_bets, self.show_bets) = self._generate_bets()
+        place_results: Dict[int, BetTypeImpl] = {}
+        show_results: Dict[int, BetTypeImpl] = {}
 
-    def _generate_bets(self) -> Tuple[List[BetTypeImpl], List[BetTypeImpl]]:
-        place_results: List[BetTypeImpl] = []
-        show_results: List[BetTypeImpl] = []
+        # TODO - revisit varying outlay by bet strength (expected return)
+        for entry in place_entries:
+            place_results[entry.id] = DrZPlaceBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
 
-        for entry in self.entries:
-            place_results.append(PlaceBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.place_strat))
-            show_results.append(ShowBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.show_strat))
+        for entry in show_entries:
+            show_results[entry.id] = DrZShowBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
 
         return (place_results, show_results)
 
+
     def min_reward(self) -> float:
+        # If not at least one show or one place bet per entry, the min is 0
+        for entry in self.entries:
+            if not self.place_bets.get(entry.id) and not self.show_bets.get(entry.id):
+                return 0
+
         return min(b.max_reward() for b in self.bets)
 
     def avg_reward(self) -> float:
-        return self.dr_z_result.expected_value * self.dr_z_result.total_outlay
+        if len(self.bets) < 1:
+            return 0
+
+        return sum([b.avg_reward() for b in self.bets])
 
     def max_reward(self) -> float:
-        # Generate place and show bets for the lowest odds 3 horses
-        entries_sorted = self.entries.copy()
-        entries_sorted.sort(key=lambda e: e.show_pool_total + e.place_pool_total)
-        lowest_3 = entries_sorted[0:3]
+        # Only 5 bets can win
+        # choose the max earning ones and sum results
 
-        place_sorted = self.place_bets
-        show_sorted = self.show_bets
-
-        # print(place_sorted)
-        # print(show_sorted)
+        place_sorted = list(self.place_bets.values())
+        show_sorted = list(self.show_bets.values())
 
         place_sorted.sort(key=lambda b: b.max_reward(), reverse=True)
         show_sorted.sort(key=lambda b: b.max_reward(), reverse=True)
@@ -708,22 +744,19 @@ class DrZPlaceShowArbBet(BetTypeImpl):
         place_winners = place_sorted[0:2]
         show_winners = show_sorted[0:3]
 
-        winners: List[BetTypeImpl] = []
-        winners.extend(place_winners)
-        winners.extend(show_winners)
-
-        print(winners)
-
-        return sum([bet.max_reward() + bet.outlay() for bet in winners])
+        return sum([bet.max_reward() + bet.outlay() for bet in (place_winners + show_winners)])
 
     def min_bet(self) -> float:
-        return self.dr_z_result.total_outlay
+        if len(self.bets) < 1:
+            return 0
+
+        return sum([b.cost() for b in self.bets])
 
     def odds(self) -> float:
         return 1
 
     def cost(self):
-        return self.dr_z_result.total_outlay
+        return sum([b.cost() for b in self.bets])
 
     def result(self) -> MultiBetResult:
         return MultiBetResult(

@@ -358,9 +358,9 @@ def create_entry_pool_totals(entry: StarterDetails, pool_total: int = 2_000_000,
 
     return EntryPoolTotals(
         program_no=entry.programNumber,
-        win_total=(pool_total * entry_odds_frac),
-        place_total=(pool_total * entry_odds_frac), 
-        show_total=(pool_total * entry_odds_frac),
+        win_total=(pool_total * entry_odds_frac) + rand_variance() * pool_total,
+        place_total=(pool_total * entry_odds_frac) + rand_variance() * pool_total,
+        show_total=(pool_total * entry_odds_frac) + rand_variance() * pool_total,
     )
 
 def create_race_pool_totals(race: RaceWithStarterDetails, num_betters: int = None) -> RacePoolTotals:

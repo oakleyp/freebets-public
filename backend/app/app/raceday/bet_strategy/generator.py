@@ -9,6 +9,8 @@ from .bet_strategies import (
     AvgCostRewardSortStrategy,
     BetStrategy,
     BetTypeImpl,
+    DrZPlaceBet,
+    DrZShowBet,
     FlatBetOutlayStrategy,
     WinAllArbBet,
     WinBoxArbBet,
@@ -55,16 +57,32 @@ class BetGen:
         return result
 
     def dr_z_bets(self) -> List[BetTypeImpl]:
-        try:
-            if not self.race.has_valid_pool_totals():
-                logger.debug("Got race with incomplete pool totals: %s", self.race)
-                logger.debug("Entries: %s", self.race.entries)
+        result: List[BetTypeImpl] = []
 
-                return []
+        # Generate Arb. bets
+        ps_arb_bet = DrZPlaceShowArbBet(race=self.race, entries=self.active_entries(), selection=self.active_entries(), strategy=self.strategy)
 
-            return [DrZPlaceShowArbBet(race=self.race, entries=self.active_entries(), selection=self.active_entries(), strategy=self.strategy)]
-        except ValueError:
-            return []
+        if len(ps_arb_bet.bets) > 0:
+            result.append(ps_arb_bet)
+
+        # Generate individual place/show bets, and append if avg value > cost
+        place_bets: List[BetTypeImpl] = []
+        show_bets: List[BetTypeImpl] = []
+
+        for entry in self.active_entries():
+            place_bet = DrZPlaceBet(race=self.race, entries=self.active_entries(), selection=[entry], strategy=self.strategy)
+            show_bet = DrZShowBet(race=self.race, entries=self.active_entries(), selection=[entry], strategy=self.strategy)
+
+            # Use Dr. Z recommended value limit (could vary by track/race)
+            if place_bet.expected_place_val_per_dollar() > 1.18:
+                place_bets.append(place_bet)
+
+            if show_bet.expected_show_val_per_dollar() > 1.18:
+                show_bets.append(show_bet)
+
+        result.extend(place_bets + show_bets)
+
+        return self.strategy.sort_strategy.sort(result)
 
     def win_box_bet_gen(
         self, min_depth: int = 2, max_depth: int = 8

@@ -18,6 +18,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Checkbox from '@mui/material/Checkbox';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import Collapse from '@mui/material/Collapse';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -214,6 +215,9 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
           {title}
         </Typography>
       )}
+      <IconButton>
+        
+      </IconButton>
       {/* {numSelected > 0 ? (
         <Tooltip title="Delete">
           <IconButton>
@@ -234,15 +238,23 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
 interface EntriesTableProps {
   title: JSX.Element | string;
   rows: any[];
+  defaultDense?: boolean | null;
+  defaultExpanded?: boolean | null;
 }
 
-export function EntriesTable({ rows, title }: EntriesTableProps) {
+export function EntriesTable({
+  rows,
+  title,
+  defaultDense = false,
+  defaultExpanded = true,
+}: EntriesTableProps) {
   const [order, setOrder] = React.useState<Order>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof Data>('ai_predicted_odds');
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
+  const [dense, setDense] = React.useState(defaultDense);
   const [rowsPerPage, setRowsPerPage] = React.useState(25);
+  const [expanded, setExpanded] = React.useState(defaultExpanded);
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
@@ -306,89 +318,93 @@ export function EntriesTable({ rows, title }: EntriesTableProps) {
   return (
     <Box sx={{ width: '100%' }}>
       <Paper sx={{ width: '100%', mb: 2 }}>
-        <EnhancedTableToolbar numSelected={selected.length} title={title} />
-        <TableContainer>
-          <Table
-            sx={{ width: '100%' }}
-            aria-labelledby="tableTitle"
-            size={dense ? 'small' : 'medium'}
-          >
-            <EnhancedTableHead
-              numSelected={selected.length}
-              order={order}
-              orderBy={orderBy}
-              onSelectAllClick={handleSelectAllClick}
-              onRequestSort={handleRequestSort}
-              rowCount={rows.length}
-            />
-            <TableBody>
-              {/* if you don't need to support IE11, you can replace the `stableSort` call with:
+        <EnhancedTableToolbar numSelected={selected.length} title={title} expanded={expanded} handleExpandClick={() => setExpanded(!expanded)} />
+        <Collapse in={expanded || false}>
+          <TableContainer>
+            <Table
+              sx={{ width: '100%' }}
+              aria-labelledby="tableTitle"
+              size={dense ? 'small' : 'medium'}
+            >
+              <EnhancedTableHead
+                numSelected={selected.length}
+                order={order}
+                orderBy={orderBy}
+                onSelectAllClick={handleSelectAllClick}
+                onRequestSort={handleRequestSort}
+                rowCount={rows.length}
+              />
+              <TableBody>
+                {/* if you don't need to support IE11, you can replace the `stableSort` call with:
                 rows.slice().sort(getComparator(order, orderBy)) */}
-              {stableSort(rows, getComparator(order, orderBy))
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => {
-                  const isItemSelected = isSelected(row.name as string);
-                  const labelId = `enhanced-table-checkbox-${index}`;
+                {stableSort(rows, getComparator(order, orderBy))
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((row, index) => {
+                    const isItemSelected = isSelected(row.name as string);
+                    const labelId = `enhanced-table-checkbox-${index}`;
 
-                  return (
-                    <TableRow
-                      hover
-                      onClick={event => handleClick(event, row.name as string)}
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      key={row.name}
-                      selected={isItemSelected}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          color="primary"
-                          checked={isItemSelected}
-                          inputProps={{
-                            'aria-labelledby': labelId,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell
-                        component="th"
-                        id={labelId}
-                        scope="row"
-                        padding="none"
+                    return (
+                      <TableRow
+                        hover
+                        onClick={event =>
+                          handleClick(event, row.name as string)
+                        }
+                        role="checkbox"
+                        aria-checked={isItemSelected}
+                        tabIndex={-1}
+                        key={row.name}
+                        selected={isItemSelected}
                       >
-                        {Number(row.program_no)}
-                      </TableCell>
-                      <TableCell align="right">{row.name}</TableCell>
-                      <TableCell align="right">
-                        {typeof row.odds === 'number' && row.odds.toFixed(2)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {typeof row.ai_predicted_odds === 'number' &&
-                          row.ai_predicted_odds.toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              {emptyRows > 0 && (
-                <TableRow
-                  style={{
-                    height: (dense ? 33 : 53) * emptyRows,
-                  }}
-                >
-                  <TableCell colSpan={6} />
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            color="primary"
+                            checked={isItemSelected}
+                            inputProps={{
+                              'aria-labelledby': labelId,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell
+                          component="th"
+                          id={labelId}
+                          scope="row"
+                          padding="none"
+                        >
+                          {Number(row.program_no)}
+                        </TableCell>
+                        <TableCell align="right">{row.name}</TableCell>
+                        <TableCell align="right">
+                          {typeof row.odds === 'number' && row.odds.toFixed(2)}
+                        </TableCell>
+                        <TableCell align="right">
+                          {typeof row.ai_predicted_odds === 'number' &&
+                            row.ai_predicted_odds.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                {emptyRows > 0 && (
+                  <TableRow
+                    style={{
+                      height: (dense ? 33 : 53) * emptyRows,
+                    }}
+                  >
+                    <TableCell colSpan={6} />
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={rows.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </Collapse>
       </Paper>
       {/* <FormControlLabel
           control={<Switch checked={dense} onChange={handleChangeDense} />}

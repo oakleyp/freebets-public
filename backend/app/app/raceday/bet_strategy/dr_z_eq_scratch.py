@@ -6,30 +6,51 @@ from app.models.race_entry import RaceEntry
 import hyperopt
 from pydantic import BaseModel
 
+# UNUSED: This was work started before realizing that the Dr. Z equations below
+# would require an NLP solver (the Dr. used CONOPT / GRG). I may revisit this in the future,
+# especially since there may be value in changing these equations to use a different basis
+# for i,j,k finish probability than his original (the harville formula).
+
+# The following are based on Dr. Z's place-show optimization formulas.
+# Since they are direct translations from his math. formulas, semantics
+# will be somewhat unpythonic until I get a better grasp of all their
+# nuances in order to restructure them as code.
+
 # Track Payback (1 - (track take % / 100))
 # This assumes 17% track take
 Q = 0.83
 
+# Amount the track rounds down on fractional payback
+# This assumes 5 cent breakage, 10 cents would BREAKAGE = 10
+# Figure out the exponent calc for this at some point
 BREAKAGE = 20
 
-# Based on Dr. Z's place-show optimization formula
 
-# def get_p_l(race: Race, entries: List[RaceEntry], l: int):
-#     outer_total: float = 0
-#     for j in range(len(entries)):
+# def expected_place_value(race: Race, entries: List[RaceEntry], l: int, place_outlay: float):
+#     total: float = 0
+
+#     P = race.place_pool_total
+
+#     for j in range(len(race.entries)):
 #         if j == l:
 #             continue
 
 #         q_l = 1 / entries[l].latest_odds()
 #         q_j = 1 / entries[j].latest_odds()
-#         harville = (q_l * q_j) * (1-q_l)
+#         harville = (q_l * q_j) / (1-q_l)
 
-#         applied_breakage = 
+#         payout_applied_breakage: float = 0
 
-#     pass
+#         P_l = entries[l].place_pool_total
+#         P_j = entries[j].place_pool_total
+#         payout_app_takeout = (Q(P + 1) - (1 + P_l + P_j)) / 2
+#         bet_effect = (1/1+P_l)
 
-# def get_s_l(race: Race, entries: List[RaceEntry], i: int):
-#     pass
+#         payout_applied_breakage_limit = payout_app_takeout * bet_effect * BREAKAGE
+
+#         payout_applied_breakage = 1 + (1 / BREAKAGE(payout_applied_breakage))
+
+    
 
 def get_place_show_all_utility(race: Race, place_outlay: float, show_outlay: float, total_wealth: float) -> float:
     entries: List[RaceEntry] = race.active_entries()
