@@ -29,10 +29,19 @@ export function SingleBetView({ bet, dense = false }: Props) {
     <>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <EntriesTable defaultDense={dense} rows={bet.active_entries} title="Active Entries" />
+          <EntriesTable
+            defaultDense={dense}
+            rows={bet.active_entries}
+            title="Active Entries"
+          />
         </Grid>
         <Grid item xs={12}>
-          <EntriesTable defaultDense={dense} defaultExpanded={false} rows={bet.inactive_entries} title="Inactive Entries" />
+          <EntriesTable
+            defaultDense={dense}
+            defaultExpanded={false}
+            rows={bet.inactive_entries}
+            title="Inactive Entries"
+          />
         </Grid>
         <Grid item xl={6} md={12} xs={12}>
           <Paper>
@@ -96,6 +105,36 @@ export function SingleBetView({ bet, dense = false }: Props) {
                         timeMillis={getEffectiveTS(bet)}
                         endText="OFF"
                       />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      Win Pool
+                    </TableCell>
+                    <TableCell align="right">
+                      ${bet.race.win_pool_total.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      Place Pool
+                    </TableCell>
+                    <TableCell align="right">
+                      ${bet.race.place_pool_total.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      Show Pool
+                    </TableCell>
+                    <TableCell align="right">
+                      ${bet.race.show_pool_total.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 </TableBody>

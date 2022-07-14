@@ -62,9 +62,9 @@ const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
 function getBetShorthand(bet: SingleBet) {
   const entryShorthand = bet.active_entries
     .map(entry => `#${entry.program_no} ${entry.name}`)
-    .join('; ');
+    .join(', ');
 
-  return `${bet.race.track_code.toUpperCase()} - ${
+  return `${bet.race.track_code.toUpperCase()} Race ${bet.race.race_number} - ${
     bet.bet_type
   } - ${entryShorthand}`;
 }

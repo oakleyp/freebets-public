@@ -354,7 +354,7 @@ def create_entry_pool_totals(entry: StarterDetails, pool_total: int = 2_000_000,
     entry_odds_frac = 1 / entry.liveOddsNumeric()
 
     def rand_variance():
-        return 1 / random.randint(5, 20)
+        return 1 / random.randint(1, 5)
 
     return EntryPoolTotals(
         program_no=entry.programNumber,

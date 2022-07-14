@@ -54,7 +54,7 @@ class BetGen:
         if self.use_pool_totals:
             result.extend(self.dr_z_bets())
 
-        return result
+        return self.strategy.sort_strategy.sort(result)
 
     def dr_z_bets(self) -> List[BetTypeImpl]:
         result: List[BetTypeImpl] = []
@@ -65,7 +65,7 @@ class BetGen:
         if len(ps_arb_bet.bets) > 0:
             result.append(ps_arb_bet)
 
-        # Generate individual place/show bets, and append if avg value > cost
+        # Generate individual place/show bets, and append if expected value > limit
         place_bets: List[BetTypeImpl] = []
         show_bets: List[BetTypeImpl] = []
 
@@ -73,16 +73,16 @@ class BetGen:
             place_bet = DrZPlaceBet(race=self.race, entries=self.active_entries(), selection=[entry], strategy=self.strategy)
             show_bet = DrZShowBet(race=self.race, entries=self.active_entries(), selection=[entry], strategy=self.strategy)
 
-            # Use Dr. Z recommended value limit (could vary by track/race)
-            if place_bet.expected_place_val_per_dollar() > 1.18:
+            # Use Dr. Z recommended value limits (could vary by track/race)
+            if place_bet.expected_place_val_per_dollar() > 1.18 and place_bet.effective_proba() > (1 / 8):
                 place_bets.append(place_bet)
 
-            if show_bet.expected_show_val_per_dollar() > 1.18:
+            if show_bet.expected_show_val_per_dollar() > 1.18 and show_bet.effective_proba() > (1 / 8):
                 show_bets.append(show_bet)
 
         result.extend(place_bets + show_bets)
 
-        return self.strategy.sort_strategy.sort(result)
+        return result
 
     def win_box_bet_gen(
         self, min_depth: int = 2, max_depth: int = 8
@@ -121,4 +121,4 @@ class BetGen:
                     )
                 )
 
-        return self.strategy.sort_strategy.sort(bets)
+        return bets

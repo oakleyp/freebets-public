@@ -18,6 +18,9 @@ class RaceEntryResult(BaseModel):
     trainer_name: Optional[str]
     sire_name: Optional[str]
     dam_name: Optional[str]
+    win_pool_total: float
+    place_pool_total: float
+    show_pool_total: float
 
 
 class RaceResult(BaseModel):
@@ -28,6 +31,9 @@ class RaceResult(BaseModel):
     status: str
     post_time: Optional[datetime]
     post_time_stamp: Optional[int]
+    win_pool_total: float
+    place_pool_total: float
+    show_pool_total: float
 
 
 class BetTagResult(BaseModel):
@@ -100,6 +106,9 @@ class BetResultConverter:
             trainer_name=entry.trainer_name,
             sire_name=entry.sire_name,
             dam_name=entry.dam_name,
+            win_pool_total=entry.win_pool_total,
+            place_pool_total=entry.place_pool_total,
+            show_pool_total=entry.show_pool_total,
         )
 
     def create_single_bet_result(self, bet: Bet) -> SingleBetResult:
@@ -111,6 +120,9 @@ class BetResultConverter:
             post_time=bet.race.post_time,
             post_time_stamp=bet.race.post_time_stamp,
             status=bet.race.status,
+            win_pool_total=bet.race.win_pool_total,
+            place_pool_total=bet.race.place_pool_total,
+            show_pool_total=bet.race.show_pool_total,
         )
 
         bet_res = SingleBetResult(

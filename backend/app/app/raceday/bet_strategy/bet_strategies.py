@@ -698,10 +698,10 @@ class DrZPlaceShowArbBet(BetTypeImpl):
         show_entries: List[RaceEntry] = []
         
         for entry in self.race.entries:
-            if get_expected_place_val_per_dollar(self.race, entry) > 1:
+            if get_expected_place_val_per_dollar(self.race, entry) > 1.18:
                 place_entries.append(entry)
 
-            if get_expected_show_val_per_dollar(self.race, entry) > 1:
+            if get_expected_show_val_per_dollar(self.race, entry) > 1.18:
                 show_entries.append(entry)
 
         place_results: Dict[int, BetTypeImpl] = {}
@@ -709,10 +709,14 @@ class DrZPlaceShowArbBet(BetTypeImpl):
 
         # TODO - revisit varying outlay by bet strength (expected return)
         for entry in place_entries:
-            place_results[entry.id] = DrZPlaceBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
+            bet = DrZPlaceBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
+            if bet.effective_proba() > (1 / 8):
+                place_results[entry.id] = bet
 
         for entry in show_entries:
-            show_results[entry.id] = DrZShowBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
+            bet = DrZShowBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
+            if bet.effective_proba() > (1 / 8):
+                show_results[entry.id] = bet
 
         return (place_results, show_results)
 

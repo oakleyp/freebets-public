@@ -6,6 +6,9 @@ export type Race = {
   status: string;
   post_time: Date;
   post_time_stamp: number;
+  win_pool_total: number;
+  place_pool_total: number;
+  show_pool_total: number;
 };
 
 export type BaseBet = {
