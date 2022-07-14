@@ -4,7 +4,7 @@
  *
  */
 import * as React from 'react';
-import { MultiBet } from 'types/Bet';
+import { MultiBet, SingleBet } from 'types/Bet';
 import { SingleBetView } from '../SingleBetView';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -15,17 +15,90 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
+import { styled } from '@mui/material/styles';
+import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
+import MuiAccordion, { AccordionProps } from '@mui/material/Accordion';
+import MuiAccordionSummary, {
+  AccordionSummaryProps,
+} from '@mui/material/AccordionSummary';
+import MuiAccordionDetails from '@mui/material/AccordionDetails';
+
+const Accordion = styled((props: AccordionProps) => (
+  <MuiAccordion disableGutters elevation={0} square {...props} />
+))(({ theme }) => ({
+  border: `1px solid ${theme.palette.divider}`,
+  '&:not(:last-child)': {
+    borderBottom: 0,
+  },
+  '&:before': {
+    display: 'none',
+  },
+}));
+
+const AccordionSummary = styled((props: AccordionSummaryProps) => (
+  <MuiAccordionSummary
+    expandIcon={<ArrowForwardIosSharpIcon sx={{ fontSize: '0.9rem' }} />}
+    {...props}
+  />
+))(({ theme }) => ({
+  backgroundColor:
+    theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, .05)'
+      : 'rgba(0, 0, 0, .03)',
+  flexDirection: 'row-reverse',
+  '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
+    transform: 'rotate(90deg)',
+  },
+  '& .MuiAccordionSummary-content': {
+    marginLeft: theme.spacing(1),
+  },
+}));
+
+const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
+  padding: theme.spacing(2),
+  borderTop: '1px solid rgba(0, 0, 0, .125)',
+}));
+
+function getBetShorthand(bet: SingleBet) {
+  const entryShorthand = bet.active_entries
+    .map(entry => `#${entry.program_no} ${entry.name}`)
+    .join('; ');
+
+  return `${bet.race.track_code.toUpperCase()} - ${
+    bet.bet_type
+  } - ${entryShorthand}`;
+}
 
 interface Props {
   bet: MultiBet;
 }
 
 export function MultiBetView({ bet }: Props) {
+  const [expanded, setExpanded] = React.useState<string | false>(false);
+
+  const handleChange =
+    (panel: string) => (event: React.SyntheticEvent, newExpanded: boolean) => {
+      setExpanded(newExpanded ? panel : false);
+    };
+
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
-        {bet.sub_bets.map(bet => (
-          <SingleBetView dense key={`betview-${bet.id}`} bet={bet} />
+        {bet.sub_bets.map((bet, i) => (
+          <Accordion
+            key={`accordion-bet-${bet.id}`}
+            expanded={expanded === `${bet.id}`}
+            onChange={handleChange(`${bet.id}`)}
+          >
+            <AccordionSummary>
+              <Typography>
+                Bet {i + 1} - {getBetShorthand(bet)}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <SingleBetView dense bet={bet} />
+            </AccordionDetails>
+          </Accordion>
         ))}
       </Grid>
       <Grid item xs={12}>
@@ -45,7 +118,7 @@ export function MultiBetView({ bet }: Props) {
               variant="subtitle1"
               component="div"
             >
-              Bet Details
+              MultiBet Details
             </Typography>
           </Toolbar>
           <TableContainer component={Paper}>
