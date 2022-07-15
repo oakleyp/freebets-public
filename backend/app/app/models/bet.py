@@ -1,5 +1,6 @@
 from hashlib import md5
 from typing import List
+import uuid
 
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.ext.declarative import declared_attr
@@ -50,27 +51,23 @@ class Bet(Base):
     min_reward = Column(Float)
     max_reward = Column(Float)
     avg_reward = Column(Float)
-    cost = Column(Float, index=True)
+    _cost = Column("cost", Float, index=True)
 
-    parent_id = Column(Integer, ForeignKey("bets.id", ondelete="CASCADE"))
+    _parent_id = Column("parent_id", Integer, ForeignKey("bets.id", ondelete="CASCADE"))
     sub_bets = relationship(
         "Bet", cascade="all, delete-orphan", backref=backref("parent", remote_side=[id])
     )
 
-    bet_type = Column(String, index=True)  # Win / WPS / etc.
-    bet_strategy_type = Column(String, index=True)  # AIWin / SafeWin / FreeWin / etc.
+    _bet_type = Column("bet_type", String, index=True)  # Win / WPS / etc.
+    _bet_strategy_type = Column("bet_strategy_type", String, index=True)  # AIWin / SafeWin / FreeWin / etc.
 
-    race_id = Column(Integer, ForeignKey("race.id"))
+    _race_id = Column("race_id", Integer, ForeignKey("race.id"))
     race = relationship("Race", back_populates="bets")
 
     tags = relationship("BetTag", secondary=bet_tags)
 
-    active_entries = relationship("RaceEntry", secondary=bet_active_entries)
+    _active_entries = relationship("RaceEntry", secondary=bet_active_entries)
     inactive_entries = relationship("RaceEntry", secondary=bet_inactive_entries)
-
-    @hybrid_property
-    def bet_md5_hex(self):
-        return self.md5_hash().hexdigest()
 
     def md5_hash(self):
         race: Race = self.race
@@ -80,12 +77,17 @@ class Bet(Base):
         for entry in active_entries:
             act_entry_nos.append(entry.program_no)
 
+        if race:
+            race_hash = race.md5_hash().hexdigest()
+        else:
+            race_hash = md5(str(uuid.uuid4()).encode()).hexdigest()
+
         base = (
-            race.md5_hash().hexdigest()
-            + ",".join(act_entry_nos)
-            + self.bet_type
-            + self.bet_strategy_type
-            + str(self.cost)
+            race_hash
+            + ",".join(sorted(act_entry_nos))
+            + f"{self.bet_type}"
+            + f"{self.bet_strategy_type}"
+            + "%.2f" % self.cost
         )
 
         if self.parent_id:
@@ -94,7 +96,79 @@ class Bet(Base):
 
         return md5(base.encode())
 
+    bet_md5_hex = Column(String, nullable=False, unique=True)
+
+    @hybrid_property
+    def cost(self) -> float:
+        return self._cost
+    
+    @cost.setter
+    def cost(self, val: float) -> None:
+        self._cost = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
+
+    @hybrid_property
+    def parent_id(self) -> int:
+        return self._parent_id
+
+    @parent_id.setter
+    def parent_id(self, val: int) -> None:
+        self._parent_id = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
+    
+    @hybrid_property
+    def bet_type(self) -> str:
+        return self._bet_type
+
+    @bet_type.setter
+    def bet_type(self, val: str) -> None:
+        self._bet_type = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
+
+    @hybrid_property
+    def bet_strategy_type(self) -> str:
+        return self._bet_strategy_type
+
+    @bet_strategy_type.setter
+    def bet_strategy_type(self, val: str) -> None:
+        self._bet_strategy_type = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
+
+    @hybrid_property
+    def race_id(self) -> int:
+        return self._race_id
+
+    @race_id.setter
+    def race_id(self, val: int) -> None:
+        self._race_id = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
+
+    @hybrid_property
+    def active_entries(self) -> List["RaceEntry"]:
+        return self._active_entries
+
+    @active_entries.setter
+    def active_entries(self, val: List["RaceEntry"]) -> None:
+        self._active_entries = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
+
     def update_shallow(self, other: "Bet") -> None:
         self.min_reward = other.min_reward
         self.avg_reward = other.avg_reward
         self.max_reward = other.max_reward
+
+    def __repr__(self) -> str:
+        act_entry_nos: List[str] = []
+
+        for entry in self.active_entries:
+            act_entry_nos.append(entry.program_no)
+
+        return self._repr(
+            id=self.id,
+            entries=(sorted([entry.program_no for entry in self.active_entries])),
+            bet_type=self.bet_type,
+            bet_strategy_type=self.bet_strategy_type,
+            cost=self.cost,
+            race_id=self.race_id,
+            md5=self.md5_hash().hexdigest(),
+        )

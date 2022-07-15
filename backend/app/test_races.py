@@ -14,7 +14,7 @@ from datetime import timedelta
 
 logging.basicConfig()
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # rdproc = RaceDayProcessor(
 #     SessionLocal(),

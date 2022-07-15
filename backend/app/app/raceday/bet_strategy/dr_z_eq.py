@@ -1,7 +1,5 @@
 # The following are based on Dr. Z's model-derived estimation formulas
 
-# Track Payback (1 - (track take % / 100))
-# This assumes 17.1% track take
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
 

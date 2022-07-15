@@ -369,7 +369,7 @@ def create_entry_pool_totals(
     entry_odds_frac = 1 / entry.liveOddsNumeric()
 
     def rand_variance():
-        return 1 / random.randint(1, 5)
+        return 1 / random.randint(2, 5)
 
     return EntryPoolTotals(
         program_no=entry.programNumber,
@@ -380,14 +380,20 @@ def create_entry_pool_totals(
 
 
 def create_race_pool_totals(
-    race: RaceWithStarterDetails, num_betters: int = None
+    race: RaceWithStarterDetails, current_pool_totals: RacePoolTotals = None, num_betters: int = None
 ) -> RacePoolTotals:
-    pool_total = random.randint(30_000, 2_000_000)
+    if not current_pool_totals:
+        pool_total = random.randint(30_000, 2_000_000)
+    else:
+        pool_total = current_pool_totals.win_total + current_pool_totals.show_total + current_pool_totals.place_total
 
     entries_totals = {
         entry.programNumber: create_entry_pool_totals(entry, pool_total=pool_total)
         for entry in race.starters
     }
+
+    if (pool_total == 0):
+        print("WTF pool total", current_pool_totals, pool_total)
 
     win_total: float = 0
     place_total: float = 0

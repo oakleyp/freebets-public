@@ -99,7 +99,9 @@ class BetResult:
             cost=self.cost,
             bet_type=str(self.bet_type),
             bet_strategy_type=str(self.bet_strategy_type),
-            race=self.race,
+            # Note: race_id used here to not attach to session,
+            # which would happen if assigning race
+            race_id=self.race.id,
             active_entries=self.selection,
             inactive_entries=[
                 horse for horse in self.horses if horse not in self.selection
@@ -152,7 +154,9 @@ class MultiBetResult:
             cost=self.cost,
             bet_type=str(self.bet_type),
             bet_strategy_type=str(self.bet_strategy_type),
-            race=self.race,
+            # Note: race_id used here to not attach to session,
+            # which would happen if assigning race
+            race_id=self.race.id,
         )
 
         root_bet.sub_bets = [bet.to_bet_db() for bet in self.bet_results]

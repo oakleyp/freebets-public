@@ -38,8 +38,8 @@ class RacePredictor:
         race_df = create_race_entry_df_from_race(race)
         race_df.fillna(-999, inplace=True)
 
-        print(race_df.to_json())
-        print(race_df.info())
+        # print(race_df.to_json())
+        # print(race_df.info())
 
         race_results: np.ndarray = self.model.predict_proba(race_df)
 

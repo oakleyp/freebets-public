@@ -104,6 +104,9 @@ class DefaultNextCheckGen(NextCheckGen):
             > time_context.lookahead_end
         ):
             return time_context.lookahead_end
+        # If within 5 minutes, refresh every 1 minute
+        elif (watcher.post_time - time_context.now < timedelta(minutes=5)):
+            return time_context.now + timedelta(minutes=1)
         # Otherwise, nct should be the refresh_interval + current time
         else:
             return time_context.now + time_context.refresh_interval
@@ -231,7 +234,7 @@ class RaceDayProcessor:
         upcoming_races = self._get_races_in_time_context(time_context)
         races_to_refresh = self._get_races_to_refresh(upcoming_races, time_context)
 
-        logger.debug(f"{len(races_to_refresh)} races to refresh...")
+        logger.info(f"{len(races_to_refresh)} races to refresh...")
 
         for race in races_to_refresh:
             logger.debug("Refreshing race entries for %s", race)
@@ -323,25 +326,22 @@ class RaceDayProcessor:
             existing_race.update_shallow(race)
             self.db.commit()
 
-            self._update_watcher(race, time_context)
+            self._update_watcher(existing_race, time_context, refresh_nct=False)
 
     def _remove_expired_watchers(self, time_context: TimeContext) -> None:
         """
             Remove all watchers from watching_races where
             the next_check_time() is outside the time_context.
         """
-        races_to_remove: List[int] = []
-
-        # Big TODO: Fix relationship cascades here
-
         for (hash, watcher) in self.watching_races.copy().items():
             nct = self.next_check_gen.get_next_check_time(watcher, time_context)
 
             race_id = self.watching_races[hash].race_id
 
-            if nct is None:
-                del self.watching_races[hash]
-                races_to_remove.append(race_id)
+            if nct is not None:
+                continue
+
+            del self.watching_races[hash]
 
             existing_race_bets = (
                 self.db.query(Bet).filter(Bet.race.has(Race.id == race_id)).all()
@@ -349,17 +349,6 @@ class RaceDayProcessor:
 
             for bet in existing_race_bets:
                 self.db.delete(bet)
-
-        self.db.commit()
-
-        if len(races_to_remove) < 1:
-            return
-
-        races = self.db.query(Race).filter(Race.id.in_(races_to_remove)).all()
-        for race in races:
-            for entry in race.entries:
-                self.db.delete(entry)
-            self.db.delete(race)
 
         self.db.commit()
 
@@ -389,6 +378,11 @@ class RaceDayProcessor:
             if race_hash in self.watching_races:
                 watcher = self.watching_races[race_hash]
 
+                diff: timedelta = (race.post_time - time_context.now)
+
+                if diff < timedelta(minutes=5) and not (watcher.next_check_time <= time_context.now):
+                    logger.error("Should refresh %s - (%s to posttime) but nct is %s", diff, race, watcher.next_check_time)
+
                 if watcher.next_check_time <= time_context.now:
                     races_to_refresh.append(race)
 
@@ -413,7 +407,7 @@ class RaceDayProcessor:
         bets = bet_gen.all_bets()
         result_bets: List[Bet] = []
 
-        logger.debug("Generated %d bets for race %s", len(bets), race)
+        logger.info("Generated bets %d for race %s", len(bets), race)
 
         for (i, bet) in enumerate(bets):
             if i >= self.max_bets_per_race:
@@ -443,15 +437,14 @@ class RaceDayProcessor:
             else:
                 new_bets.append(bet)
 
-        logger.debug("Updated %d bets", len(updates_seen))
+        hashes_to_delete = set(bet_map.keys()).difference(updates_seen)
 
-        hashes_to_delete = set(bet_map.keys()) - updates_seen
-
-        logger.debug("Deleting %d bets not in update", len(hashes_to_delete))
         for hash in hashes_to_delete:
             self.db.delete(bet_map[hash])
 
-        self.db.add_all(new_bets)
+        if len(new_bets):
+            self.db.add_all(new_bets)
+
         self.db.commit()
 
         return result_bets
@@ -510,7 +503,7 @@ class RaceDayProcessor:
         if race_hash in self.watching_races:
             del self.watching_races[race_hash]
 
-    def _update_watcher(self, race: Race, time_context: TimeContext) -> None:
+    def _update_watcher(self, race: Race, time_context: TimeContext, refresh_nct: bool = True) -> None:
         """
             Updates watching_races from the given race, or deletes it 
             if next_check_time() falls outside time_context.
@@ -522,7 +515,10 @@ class RaceDayProcessor:
             logger.error("Called _update_watcher() when none exists for race %s", race)
             return None
 
-        nct = self.next_check_gen.get_next_check_time(watcher, time_context)
+        if watcher.next_check_time <= time_context.now and refresh_nct:
+            nct = self.next_check_gen.get_next_check_time(watcher, time_context)
+        else:
+            nct = watcher.next_check_time
 
         if nct is None:
             logger.error()
@@ -542,10 +538,30 @@ class RaceDayProcessor:
             LiveRaceEntryCanonical(entry).convert() for entry in race_entries
         ]
 
-        race.entries = []
-        self.db.commit()
+        # If this is the first time the race has been pulled,
+        # there will be no existing entries.
+        if len(race.entries) < 1:
+            race.entries = entries_canon
+            self.db.commit()
+            return
 
-        race.entries = entries_canon
+        existing_entries = {}
+        new_entries = {}
+
+        for entry in race.entries:
+            existing_entries[entry.program_no] = entry
+
+        for entry in entries_canon:
+            new_entries[entry.program_no] = entry
+
+        if len(set(existing_entries.keys()).difference(set(new_entries.keys()))):
+            race.entries = entries_canon
+            self.db.commit()
+            return
+
+        for (program_no, entry) in existing_entries.items():
+            entry.update_shallow(new_entries[program_no])
+
         self.db.commit()
 
     def _ingest_race_pool_totals(self, race: Race) -> RacePoolTotals:

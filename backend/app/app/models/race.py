@@ -15,8 +15,6 @@ if TYPE_CHECKING:
 
 class Race(Base):
     id = Column(Integer, primary_key=True, index=True)
-    race_number = Column(Integer, nullable=False)
-    race_date = Column(Date, nullable=False, index=True)
     post_time = Column(TZDateTime, nullable=False)
     post_time_stamp = Column(BigInteger, nullable=False)
     mtp = Column(Integer)
@@ -30,12 +28,57 @@ class Race(Base):
     description = Column(String)
     wagers = Column(String)
     country = Column(String, index=True)
-    current_race = Column(Boolean, default=False, nullable=False, index=True)
+    current_race = Column(Boolean, default=False, index=True)
     # TODO op:
     # carryoverPool
     # hasExpertPick?
 
-    track_code = Column(String, nullable=False, index=True)
+    _race_number = Column("race_number", Integer, nullable=False)
+    _race_date = Column("race_date", Date, nullable=False, index=True)
+    _track_code = Column("track_code", String, nullable=False, index=True)
+
+    def md5_hash(self):
+        """
+            Generate an MD5 hash for this race. 
+            
+            This is used rather than the builtin __hash__,
+            [used by builtin hash()], since hash() varies between runtime
+            and python implementations, whereas this is used for comparing
+            db-persisted objects.
+        """
+        base = str(self.race_date) + str(self.track_code) + str(self.race_number)
+        return md5(base.encode())
+
+    race_md5_hex = Column(String, nullable=False, unique=True)
+
+    @hybrid_property
+    def race_number(self) -> int:
+        return self._race_number
+    
+    @race_number.setter
+    def race_number(self, val: int) -> None:
+        self._race_number = val
+        self.race_md5_hex = self.md5_hash().hexdigest()
+
+    @hybrid_property
+    def race_date(self):
+        return self._race_date
+
+    @race_date.setter
+    def race_date(self, val) -> None:
+        self._race_date = val
+        self.race_md5_hex = self.md5_hash().hexdigest()
+        
+    @hybrid_property
+    def track_code(self) -> str:
+        return self._track_code
+
+    @track_code.setter
+    def track_code(self, val) -> None:
+        self._track_code = val
+        self.race_md5_hex = self.md5_hash().hexdigest()
+
+
     track_country = Column(String)
     race_type = Column(String, nullable=False)  # Thoroughbred, Harness, etc.
 
@@ -49,15 +92,6 @@ class Race(Base):
     bets = relationship(
         "Bet", back_populates="race", cascade="all, delete-orphan", uselist=True
     )
-
-    @hybrid_property
-    def race_md5_hex(self):
-        base = str(self.race_date) + self.track_code + str(self.race_number)
-        return md5(base.encode())
-
-    @race_md5_hex.expression
-    def race_md5_hex(cls):
-        return func.md5(str(cls.race_date) + cls.track_code + str(cls.race_number))
 
     def active_entries(self) -> List["RaceEntry"]:
         return [entry for entry in self.entries if not entry.scratched]
@@ -76,17 +110,6 @@ class Race(Base):
 
         return True
 
-    def md5_hash(self):
-        """
-            Generate an MD5 hash for this race. 
-            
-            This is used rather than the builtin __hash__,
-            [used by builtin hash()], since hash() varies between runtime
-            and python implementations, whereas this is used for comparing
-            db-persisted objects.
-        """
-        base = str(self.race_date) + self.track_code + str(self.race_number)
-        return md5(base.encode())
 
     def update_shallow(self, other: "Race"):
         """
