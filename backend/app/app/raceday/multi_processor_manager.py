@@ -2,9 +2,6 @@ import concurrent.futures
 import logging
 from time import sleep
 from typing import List
-import sys
-import signal
-
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -25,7 +22,9 @@ class RaceDayProcessorManager:
         try:
             proc.blocking_start()
         except Exception as e:
-            logger.exception("Uncaught exception in processor thread: %s", e, stack_info=True)
+            logger.exception(
+                "Uncaught exception in processor thread: %s", e, stack_info=True
+            )
 
     def clear_races(self) -> None:
         all_races: List[Race] = self.db.query(Race).all()
@@ -47,7 +46,10 @@ class RaceDayProcessorManager:
                 time_context = proc._active_time_context()
                 query = query.filter(
                     or_(
-                        Race.post_time < (time_context.lookahead_start - time_context.refresh_interval),
+                        Race.post_time
+                        < (
+                            time_context.lookahead_start - time_context.refresh_interval
+                        ),
                         Race.post_time
                         > (time_context.lookahead_end + time_context.refresh_interval),
                     )

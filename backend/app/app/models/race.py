@@ -1,7 +1,7 @@
 from hashlib import md5
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import BigInteger, Boolean, Column, Date, Float, Integer, String, func
+from sqlalchemy import BigInteger, Boolean, Column, Date, Float, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
@@ -54,7 +54,7 @@ class Race(Base):
     @hybrid_property
     def race_number(self) -> int:
         return self._race_number
-    
+
     @race_number.setter
     def race_number(self, val: int) -> None:
         self._race_number = val
@@ -68,7 +68,7 @@ class Race(Base):
     def race_date(self, val) -> None:
         self._race_date = val
         self.race_md5_hex = self.md5_hash().hexdigest()
-        
+
     @hybrid_property
     def track_code(self) -> str:
         return self._track_code
@@ -77,7 +77,6 @@ class Race(Base):
     def track_code(self, val) -> None:
         self._track_code = val
         self.race_md5_hex = self.md5_hash().hexdigest()
-
 
     track_country = Column(String)
     race_type = Column(String, nullable=False)  # Thoroughbred, Harness, etc.
@@ -109,7 +108,6 @@ class Race(Base):
                 return False
 
         return True
-
 
     def update_shallow(self, other: "Race"):
         """

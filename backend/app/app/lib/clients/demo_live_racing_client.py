@@ -60,7 +60,9 @@ class DemoLiveRacingClient(AbstractLiveRacingClient):
                 if i == 0:
                     race.currentRace = True
 
-                self.pool_totals[track_race.brisCode][str(race.raceNumber)] = create_race_pool_totals(race_override)
+                self.pool_totals[track_race.brisCode][
+                    str(race.raceNumber)
+                ] = create_race_pool_totals(race_override)
 
             self.race_state[track_race.brisCode] = created_race_details
 
@@ -78,14 +80,16 @@ class DemoLiveRacingClient(AbstractLiveRacingClient):
                 f"Failed to pull race entries for track {track_code} - race {race_no} - type {type}: {e}"
             )
 
-    def _set_current_race_flags(self, track_races: List[TrackWithRaceDetails]) -> List[TrackWithRaceDetails]:
+    def _set_current_race_flags(
+        self, track_races: List[TrackWithRaceDetails]
+    ) -> List[TrackWithRaceDetails]:
         now = datetime.now(timezone.utc)
 
         for track_race in track_races:
             for race in sorted(track_race.races, key=lambda r: r.postTime):
                 if race.postTime >= now:
                     race.currentRace = True
-                    break # continue in outer loop
+                    break  # continue in outer loop
 
         return track_races
 
@@ -106,12 +110,15 @@ class DemoLiveRacingClient(AbstractLiveRacingClient):
     ) -> RacePoolTotals:
         current_totals = self.pool_totals.get(track_code, {}).get(str(race_no))
         if current_totals:
-            new_totals = create_race_pool_totals(self.race_state[track_code][str(race_no)], current_pool_totals=current_totals)
+            new_totals = create_race_pool_totals(
+                self.race_state[track_code][str(race_no)],
+                current_pool_totals=current_totals,
+            )
             self.pool_totals[track_code][str(race_no)] = new_totals
             return new_totals
 
         new_totals = create_race_pool_totals(self.race_state[track_code][str(race_no)])
-        
+
         if not self.pool_totals.get(track_code):
             self.pool_totals[track_code] = {}
 

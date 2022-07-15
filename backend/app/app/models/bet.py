@@ -1,6 +1,6 @@
+import uuid
 from hashlib import md5
 from typing import List
-import uuid
 
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.ext.declarative import declared_attr
@@ -59,7 +59,9 @@ class Bet(Base):
     )
 
     _bet_type = Column("bet_type", String, index=True)  # Win / WPS / etc.
-    _bet_strategy_type = Column("bet_strategy_type", String, index=True)  # AIWin / SafeWin / FreeWin / etc.
+    _bet_strategy_type = Column(
+        "bet_strategy_type", String, index=True
+    )  # AIWin / SafeWin / FreeWin / etc.
 
     _race_id = Column("race_id", Integer, ForeignKey("race.id"))
     race = relationship("Race", back_populates="bets")
@@ -101,7 +103,7 @@ class Bet(Base):
     @hybrid_property
     def cost(self) -> float:
         return self._cost
-    
+
     @cost.setter
     def cost(self, val: float) -> None:
         self._cost = val
@@ -115,7 +117,7 @@ class Bet(Base):
     def parent_id(self, val: int) -> None:
         self._parent_id = val
         self.bet_md5_hex = self.md5_hash().hexdigest()
-    
+
     @hybrid_property
     def bet_type(self) -> str:
         return self._bet_type

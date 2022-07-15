@@ -105,7 +105,7 @@ class DefaultNextCheckGen(NextCheckGen):
         ):
             return time_context.lookahead_end
         # If within 5 minutes, refresh every 1 minute
-        elif (watcher.post_time - time_context.now < timedelta(minutes=5)):
+        elif watcher.post_time - time_context.now < timedelta(minutes=5):
             return time_context.now + timedelta(minutes=1)
         # Otherwise, nct should be the refresh_interval + current time
         else:
@@ -380,8 +380,15 @@ class RaceDayProcessor:
 
                 diff: timedelta = (race.post_time - time_context.now)
 
-                if diff < timedelta(minutes=5) and not (watcher.next_check_time <= time_context.now):
-                    logger.error("Should refresh %s - (%s to posttime) but nct is %s", diff, race, watcher.next_check_time)
+                if diff < timedelta(minutes=5) and not (
+                    watcher.next_check_time <= time_context.now
+                ):
+                    logger.error(
+                        "Should refresh %s - (%s to posttime) but nct is %s",
+                        diff,
+                        race,
+                        watcher.next_check_time,
+                    )
 
                 if watcher.next_check_time <= time_context.now:
                     races_to_refresh.append(race)
@@ -503,7 +510,9 @@ class RaceDayProcessor:
         if race_hash in self.watching_races:
             del self.watching_races[race_hash]
 
-    def _update_watcher(self, race: Race, time_context: TimeContext, refresh_nct: bool = True) -> None:
+    def _update_watcher(
+        self, race: Race, time_context: TimeContext, refresh_nct: bool = True
+    ) -> None:
         """
             Updates watching_races from the given race, or deletes it 
             if next_check_time() falls outside time_context.
