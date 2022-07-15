@@ -32,9 +32,9 @@ logger = logging.getLogger(__name__)
 
 class RaceWatcher(BaseModel):
     race_id: int
+    race_md5: str
     post_time: datetime
     next_check_time: datetime
-    last_checked_time: Optional[datetime]
 
     def __repr__(self):
         """String repr of RaceWatcher."""
@@ -42,6 +42,15 @@ class RaceWatcher(BaseModel):
             self.race_id,
             self.post_time,
             self.next_check_time,
+        )
+
+    @classmethod
+    def from_race(cls, race: Race, nct: datetime) -> 'RaceWatcher':
+        return cls(
+            race_id=race.id,
+            race_md5=race.md5_hash().hexdigest(),
+            post_time=race.post_time,
+            next_check_time=nct,
         )
 
 
@@ -84,9 +93,6 @@ class DefaultNextCheckGen(NextCheckGen):
         if watcher.post_time <= time_context.lookahead_start:
             # Time has passed, don't check
             return None
-
-        if watcher.last_checked_time is None:
-            return time_context.now
 
         # If nct would be outside of lookahead range, return the lookahed_end as nct
         if (
@@ -138,7 +144,8 @@ class RaceDayProcessor:
         self.max_bets_per_race: int = max_bets_per_race
         self.resilient: bool = resilient
 
-        self.watching_races: Dict[int, RaceWatcher] = {}
+        # Map of race md5 -> RaceWatcher
+        self.watching_races: Dict[str, RaceWatcher] = {}
 
         self.live_race_client: AbstractLiveRacingClient = live_racing_client
         self.live_race_crawler = LiveRacingCrawler(self.live_race_client)
@@ -155,9 +162,6 @@ class RaceDayProcessor:
             f"Starting RaceDayProcessor for "
             f"{self.lookahead_base} -> {self.lookahead_limit}"
         )
-
-        time_context = self._active_time_context()
-        self._clean_db(time_context)
 
         while True:
             time_context = self._active_time_context()
@@ -225,7 +229,7 @@ class RaceDayProcessor:
 
         logger.debug(f"{len(races_to_refresh)} races to refresh...")
 
-        for race in upcoming_races:
+        for race in races_to_refresh:
             logger.debug("Refreshing race entries for %s", race)
 
             try:
@@ -235,7 +239,6 @@ class RaceDayProcessor:
                     "Failed to ingest race entries for %s", race, stack_info=True
                 )
 
-                self.db.delete(race)
                 self._del_watcher(race)
 
                 if not self.resilient:
@@ -285,76 +288,71 @@ class RaceDayProcessor:
             races_canon.extend(LiveTrackBasicCanonical(track).convert())
 
         for race in races_canon:
-            existing_race = (
+            new_race_hash = race.md5_hash().hexdigest()            
+
+            # If this proc should not watch the race, do nothing.
+            # This is in consideration of the fact that multiple rdprocs
+            # could be running on different time ranges, they shouldn't
+            # interfere with eachother's races (other than shallow updates).
+            if not self._should_watch_race(race, time_context):
+                self._del_watcher(race)
+                continue
+
+            maybe_existing_race = (
                 self.db.query(Race)
                 .filter(
-                    Race.track_code == race.track_code,
-                    Race.race_date == race.race_date,
-                    Race.country == race.country,
-                    Race.race_number == race.race_number,
+                    Race.race_md5_hex == new_race_hash
                 )
                 .first()
             )
 
-            existing_race_watcher = None
-
-            # If the race already exists in the db, reassign existing entries
-            # to the updated race model and overwrite the existing data
-            if existing_race:
-                if existing_race.id in self.watching_races:
-                    existing_race_watcher = self.watching_races[existing_race.id]
-                    del self.watching_races[existing_race.id]
-
-                existing_entries = existing_race.entries
-
-                for existing_entry in existing_entries:
-                    existing_entry.race_id = race.id
-
-                race.entries = existing_entries
-                existing_race.entries = []
-
-                self.db.delete(existing_race)
+            if not maybe_existing_race:
+                self.db.add(race)
                 self.db.commit()
 
-            if self._should_watch_race(race, time_context):
-                self.db.add(race)
-                self.db.flush()
+                self._add_watcher(race, time_context)
 
-                if existing_race_watcher:
-                    self.watching_races[race.id] = existing_race_watcher
-                    self.watching_races[race.id].post_time = race.post_time
-                    self.watching_races[race.id].race_id = race.id
-                else:
-                    self._add_watcher(race, time_context)
+                continue
 
-        self.db.commit()
+            existing_race: Race = maybe_existing_race
+
+            # If the race already exists in the db, do a shallow update w/
+            # the new data.
+            existing_race.update_shallow(race)
+            self.db.commit()
+
+            self._update_watcher(race, time_context)
+
 
     def _remove_expired_watchers(self, time_context: TimeContext) -> None:
         """
             Remove all watchers from watching_races where
-            the next_check_time is None.
+            the next_check_time() is outside the time_context.
         """
         races_to_remove: List[int] = []
 
         # Big TODO: Fix relationship cascades here
 
-        for (id, watcher) in self.watching_races.copy().items():
+        for (hash, watcher) in self.watching_races.copy().items():
             nct = self.next_check_gen.get_next_check_time(watcher, time_context)
 
+            race_id = self.watching_races[hash].race_id
+
             if nct is None:
-                del self.watching_races[id]
-                races_to_remove.append(id)
-
-
+                del self.watching_races[hash]
+                races_to_remove.append(race_id)
             
             existing_race_bets = (
-                self.db.query(Bet).filter(Bet.race.has(Race.id == id)).all()
+                self.db.query(Bet).filter(Bet.race.has(Race.id == race_id)).all()
             )
 
             for bet in existing_race_bets:
                 self.db.delete(bet)
 
         self.db.commit()
+
+        if len(races_to_remove) < 1:
+            return
 
         races = self.db.query(Race).filter(Race.id.in_(races_to_remove)).all()
         for race in races:
@@ -385,8 +383,10 @@ class RaceDayProcessor:
         races_to_refresh: List[Race] = []
 
         for race in upcoming_races:
-            if race.id in self.watching_races:
-                watcher = self.watching_races[race.id]
+            race_hash = race.md5_hash().hexdigest()
+
+            if race_hash in self.watching_races:
+                watcher = self.watching_races[race_hash]
 
                 if watcher.next_check_time <= time_context.now:
                     races_to_refresh.append(race)
@@ -395,12 +395,16 @@ class RaceDayProcessor:
 
     def _refresh_race_bets(self, race: Race, use_pool_totals: bool = False) -> List[Bet]:
         """Regenerate bets for the given race."""
-        existing_race_bets = (
+        existing_race_bets: List[Bet] = (
             self.db.query(Bet).filter(Bet.race.has(Race.id == race.id)).all()
         )
 
+        # Map of bet hash -> bet
+        bet_map: Dict[str, Bet] = {}
+
         for bet in existing_race_bets:
-            self.db.delete(bet)
+            bet_hash = bet.md5_hash().hexdigest()
+            bet_map[bet_hash] = bet
 
         bet_gen = BetGen(race=race, use_pool_totals=use_pool_totals)
         bets = bet_gen.all_bets()
@@ -424,7 +428,27 @@ class RaceDayProcessor:
 
         logger.debug("Saving generated bets")
 
-        self.db.add_all(result_bets)
+        new_bets: List[Bet] = []
+        updates_seen = set()
+
+        for bet in result_bets:
+            bet_hash = bet.md5_hash().hexdigest()
+            
+            if bet_hash in bet_map:
+                bet_map[bet_hash].update_shallow(bet)
+                updates_seen.add(bet_hash)
+            else:
+                new_bets.append(bet)
+
+        logger.debug("Updated %d bets", len(updates_seen))
+
+        hashes_to_delete = set(bet_map.keys()) - updates_seen
+
+        logger.debug("Deleting %d bets not in update", len(hashes_to_delete))
+        for hash in hashes_to_delete:
+            self.db.delete(bet_map[hash])
+
+        self.db.add_all(new_bets)
         self.db.commit()
 
         return result_bets
@@ -467,46 +491,44 @@ class RaceDayProcessor:
         return min(ncts)
 
     def _add_watcher(self, race: Race, time_context: TimeContext) -> None:
-        """Creates a new RaceWatcher for the given race, using the given time_context
-           as the basis for the next_check_time.
         """
-        watcher = RaceWatcher(
-            race_id=race.id,
-            post_time=race.post_time,
-            next_check_time=time_context.now,
-            last_checked_time=None,
-        )
+            Creates a new RaceWatcher for the given race, using the given time_context
+            as the basis for the next_check_time. Assumes that _should_watch_race()
+            is true at this point, and that since there was previously no watcher,
+            next_check_time should be now.
+        """
+        race_hash = race.md5_hash().hexdigest()
+        self.watching_races[race_hash] = RaceWatcher.from_race(race, time_context.now)
 
-        nct = self.next_check_gen.get_next_check_time(watcher, time_context)
+    def _del_watcher(self, race: Race) -> None:
+        """Removes a watcher for the given race, if one exists."""
+        race_hash = race.md5_hash().hexdigest()
 
-        if nct is None:
-            logger.debug("Skipping add watcher - nct is None for race %s", race)
-            return None
-
-        watcher.next_check_time = nct
-        self.watching_races[race.id] = watcher
-
-    def _del_watcher(self, race) -> None:
-        if race.id in self.watching_races:
-            del self.watching_races[race.id]
+        if race_hash in self.watching_races:
+            del self.watching_races[race_hash]
 
     def _update_watcher(self, race: Race, time_context: TimeContext) -> None:
-        watcher = self.watching_races[race.id]
+        """
+            Updates watching_races from the given race, or deletes it 
+            if next_check_time() falls outside time_context.
+        """
+        race_hash = race.md5_hash().hexdigest()
+        watcher = self.watching_races[race_hash]
 
         if watcher is None:
-            logger.error("Called update watcher when none exists for race %s", race)
+            logger.error("Called _update_watcher() when none exists for race %s", race)
             return None
-
-        watcher.last_checked_time = time_context.now
 
         nct = self.next_check_gen.get_next_check_time(watcher, time_context)
 
         if nct is None:
-            del self.watching_races[race.id]
+            logger.error()
+            del self.watching_races[race_hash]
             return None
 
-        watcher.next_check_time = nct
-        self.watching_races[race.id] = watcher
+        updated_watcher = watcher.from_race(race, nct)
+
+        self.watching_races[race_hash] = updated_watcher
 
     def _ingest_race_entries(self, race: Race) -> None:
         """Refresh the list of entries for the given race."""
@@ -558,23 +580,6 @@ class RaceDayProcessor:
             return False
 
         return True
-
-    def _clean_db(self, time_context: TimeContext) -> None:
-        """Delete all race, entries, and bets within the current time context."""
-
-        all_races: List[Race] = self.db.query(Race).filter(
-            Race.post_time >= time_context.lookahead_start,
-            Race.post_time < time_context.lookahead_end,
-        ).all()
-
-        logger.debug(
-            "Cleaning up %d races found in active time context", len(all_races)
-        )
-
-        for race in all_races:
-            self.db.delete(race)
-
-        self.db.commit()
 
     def _log_and_sleep(self, sleep_time: float) -> None:
         """Log the time to be slept, then sleep."""

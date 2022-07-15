@@ -11,6 +11,7 @@ export const initialState: BetViewState = {
   error: null,
   bet: null,
   betMetaType: null,
+  nextRefreshTs: null,
 };
 
 const slice = createSlice({
@@ -28,6 +29,7 @@ const slice = createSlice({
       const resp = action.payload;
       state.bet = resp.data;
       state.betMetaType = resp.result_type;
+      state.nextRefreshTs = resp.next_refresh_ts;
       state.loading = false;
     },
     betLoadingError(state, action: PayloadAction<BetViewErrorType>) {

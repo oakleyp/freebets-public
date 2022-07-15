@@ -29,3 +29,8 @@ export const selectBetMetaType = createSelector(
   [selectDomain],
   betViewState => betViewState.betMetaType,
 );
+
+export const selectNextRefreshTs = createSelector(
+  [selectDomain],
+  betViewState => betViewState.nextRefreshTs,
+);

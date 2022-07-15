@@ -21,10 +21,11 @@ import { getEffectiveTS } from 'utils/bets';
 
 interface Props {
   bet: SingleBet;
+  nextRefreshTs: number;
   dense?: boolean | null;
 }
 
-export function SingleBetView({ bet, dense = false }: Props) {
+export function SingleBetView({ bet, nextRefreshTs, dense = false }: Props) {
   return (
     <>
       <Grid container spacing={2}>
@@ -226,6 +227,19 @@ export function SingleBetView({ bet, dense = false }: Props) {
                       Bet Strategy
                     </TableCell>
                     <TableCell align="right">{bet.bet_strategy_type}</TableCell>
+                  </TableRow>
+                  <TableRow
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      Next Refresh
+                    </TableCell>
+                    <TableCell align="right">
+                      <CountdownTimer
+                        timeMillis={nextRefreshTs}
+                        endText="OFF"
+                      />
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

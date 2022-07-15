@@ -5,7 +5,8 @@
  */
 import * as React from 'react';
 import { MultiBet, SingleBet } from 'types/Bet';
-import { SingleBetView } from '../SingleBetView';
+import { SingleBetView } from 'app/components/SingleBetView';
+import { CountdownTimer } from 'app/components/CountdownTimer';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -71,9 +72,10 @@ function getBetShorthand(bet: SingleBet) {
 
 interface Props {
   bet: MultiBet;
+  nextRefreshTs: number;
 }
 
-export function MultiBetView({ bet }: Props) {
+export function MultiBetView({ bet, nextRefreshTs }: Props) {
   const [expanded, setExpanded] = React.useState<string | false>(false);
 
   const handleChange =
@@ -96,7 +98,7 @@ export function MultiBetView({ bet }: Props) {
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <SingleBetView dense bet={bet} />
+              <SingleBetView dense bet={bet} nextRefreshTs={nextRefreshTs} />
             </AccordionDetails>
           </Accordion>
         ))}
@@ -185,6 +187,16 @@ export function MultiBetView({ bet }: Props) {
                     Bet Strategy
                   </TableCell>
                   <TableCell align="right">{bet.bet_strategy_type}</TableCell>
+                </TableRow>
+                <TableRow
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    Next Refresh
+                  </TableCell>
+                  <TableCell align="right">
+                    <CountdownTimer timeMillis={nextRefreshTs} endText="OFF" />
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>

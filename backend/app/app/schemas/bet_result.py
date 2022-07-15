@@ -89,6 +89,7 @@ class BetsQueryResponse(BaseModel):
 class BetGetResponse(BaseModel):
     data: Union[SingleBetResult, MultiBetResult]
     result_type: str
+    next_refresh_ts: int
 
 
 class BetResultConverter:

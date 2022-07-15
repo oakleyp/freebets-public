@@ -34,6 +34,28 @@ DEFAULT_BET_TYPES = list(
     map(str, [BetType.ALL_WIN_ARB, BetType.BOX_WIN_ARB, BetType.WIN_BET, BetType.PLACE_BET, BetType.SHOW_BET, BetType.PLACE_SHOW_ARB])
 )
 
+def get_next_refresh_ts(db: Session) -> int:
+    # Get the time to next refresh from the latest processor refresh log.
+    # It may be in the past depending on when the processor last ran;
+    # use the max sleep time in that case.
+    latest_refresh_log: Optional[RaceDayRefreshLog] = db.query(
+        RaceDayRefreshLog
+    ).order_by(RaceDayRefreshLog.next_check_time.desc()).first()
+
+    now = datetime.now(timezone.utc)
+
+    if latest_refresh_log and latest_refresh_log.next_check_time >= now:
+        nct: datetime = latest_refresh_log.next_check_time
+        next_refresh_ts = int(nct.timestamp() * 1000)
+        # Add some time to account for the time to run the job
+        next_refresh_ts += settings.EXPECTED_PROCESS_TIME_SECS * 1000
+    else:
+        next_refresh_ts = int(
+            (now + timedelta(seconds=settings.MAX_SLEEP_TIME_SECS)).timestamp() * 1000
+        )
+
+    return next_refresh_ts
+
 
 @router.get("/", response_model=schemas.BetsQueryResponse)
 @router.get("", response_model=schemas.BetsQueryResponse, include_in_schema=False)
@@ -90,24 +112,8 @@ def read_bets(
         str(BetStrategyType[bet_strat_type.name]) for bet_strat_type in BetStrategyType
     ]
     all_bet_types = [str(BetType[bet_type.name]) for bet_type in BetType]
-    latest_refresh_log: Optional[RaceDayRefreshLog] = db.query(
-        RaceDayRefreshLog
-    ).order_by(RaceDayRefreshLog.next_check_time.desc()).first()
 
-    now = datetime.now(timezone.utc)
-
-    # Get the time to next refresh from the latest processor refresh log.
-    # It may be in the past depending on when the processor last ran;
-    # use the max sleep time in that case.
-    if latest_refresh_log and latest_refresh_log.next_check_time >= now:
-        nct: datetime = latest_refresh_log.next_check_time
-        next_refresh_ts = int(nct.timestamp() * 1000)
-        # Add some time to account for the time to run the job
-        next_refresh_ts += settings.EXPECTED_PROCESS_TIME_SECS * 1000
-    else:
-        next_refresh_ts = int(
-            (now + timedelta(seconds=settings.MAX_SLEEP_TIME_SECS)).timestamp() * 1000
-        )
+    next_refresh_ts = get_next_refresh_ts(db)
 
     return BetsQueryResponse(
         single_bets=single_bets,
@@ -136,11 +142,13 @@ def read_bet(*, db: Session = Depends(deps.get_db), id: int,) -> Any:
 
     bet_conv = BetResultConverter()
 
+    next_refresh_ts = get_next_refresh_ts(db)
+
     if len(bet.sub_bets) < 1:
         return BetGetResponse(
-            data=bet_conv.create_single_bet_result(bet), result_type="single"
+            data=bet_conv.create_single_bet_result(bet), result_type="single", next_refresh_ts=next_refresh_ts
         )
     else:
         return BetGetResponse(
-            data=bet_conv.create_multi_bet_result(bet), result_type="multi",
+            data=bet_conv.create_multi_bet_result(bet), result_type="multi", next_refresh_ts=next_refresh_ts
         )

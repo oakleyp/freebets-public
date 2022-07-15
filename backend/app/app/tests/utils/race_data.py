@@ -126,12 +126,13 @@ def create_race_details(
     )
 
 
-def create_track_with_race_details_n(n: int) -> List[TrackWithRaceDetails]:
-    return [create_track_with_race_details() for _ in range(n)]
+def create_track_with_race_details_n(n: int, race_details_args: Dict[str, Any] = {}, races_per_track: int = 2) -> List[TrackWithRaceDetails]:
+    return [create_track_with_race_details(race_details_args=race_details_args, races_per_track=races_per_track) for _ in range(n)]
 
 
 def create_track_with_race_details(
-    race_details_args: Dict[str, Any] = {}
+    race_details_args: Dict[str, Any] = {},
+    races_per_track: int = 2,
 ) -> TrackWithRaceDetails:
     return TrackWithRaceDetails(
         brisCode=random_lower_string(length=3),
@@ -144,7 +145,7 @@ def create_track_with_race_details(
         allowsConditionalWagering=True,
         surfaceConditions=[SurfaceConditions(type="dirt", condition="fast",)],
         featured=[Featured(featuredTrackId=1, label=random_lower_string(), races=3,)],
-        races=create_race_details_n(2, adjacent=True, **race_details_args),
+        races=create_race_details_n(races_per_track, adjacent=True, **race_details_args),
     )
 
 

@@ -1,7 +1,9 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple
 
-from sqlalchemy import BigInteger, Boolean, Column, Date, Integer, String, Float
+from sqlalchemy import BigInteger, Boolean, Column, Date, Integer, String, Float, func
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
+from hashlib import md5
 
 from app.db.base_class import Base
 from app.db.custom_types import TZDateTime
@@ -9,7 +11,6 @@ from app.db.custom_types import TZDateTime
 if TYPE_CHECKING:
     from .race_entry import RaceEntry  # noqa F401
     from .bet import Bet  # noqa F401
-
 
 class Race(Base):
     id = Column(Integer, primary_key=True, index=True)
@@ -31,7 +32,6 @@ class Race(Base):
     current_race = Column(Boolean, default=False, nullable=False, index=True)
     # TODO op:
     # carryoverPool
-    # currentRace?
     # hasExpertPick?
 
     track_code = Column(String, nullable=False, index=True)
@@ -49,6 +49,15 @@ class Race(Base):
         "Bet", back_populates="race", cascade="all, delete-orphan", uselist=True
     )
 
+    @hybrid_property
+    def race_md5_hex(self):
+        base = str(self.race_date) + self.track_code + str(self.race_number)
+        return md5(base.encode())
+
+    @race_md5_hex.expression
+    def race_md5_hex(cls):
+        return func.md5(str(cls.race_date) + cls.track_code + str(cls.race_number))
+
     def active_entries(self) -> List['RaceEntry']:
         return [entry for entry in self.entries if not entry.scratched]
 
@@ -61,6 +70,39 @@ class Race(Base):
                 return False
 
         return True
+
+    def md5_hash(self):
+        """
+            Generate an MD5 hash for this race. 
+            
+            This is used rather than the builtin __hash__,
+            [used by builtin hash()], since hash() varies between runtime
+            and python implementations, whereas this is used for comparing
+            db-persisted objects.
+        """
+        base = str(self.race_date) + self.track_code + str(self.race_number)
+        return md5(base.encode())
+
+    def update_shallow(self, other: 'Race'):
+        """
+            Update race properties based on a shallow race fetch.
+
+            This excludes relationships and other properties that a shallow
+            fetch result will not contain.
+        """
+        self.post_time = other.post_time
+        self.post_time_stamp = other.post_time_stamp
+        self.mtp = other.mtp
+        self.status = other.status
+        self.distance = other.distance
+        self.distance_long = other.distance_long
+        self.surface = other.surface
+        self.age_restrictions = other.age_restrictions
+        self.sex_restrictions = other.sex_restrictions
+        self.description = other.description
+        self.wagers = other.wagers
+        self.country = other.country
+        self.current_race = other.current_race
 
     def __repr__(self) -> str:
         return self._repr(

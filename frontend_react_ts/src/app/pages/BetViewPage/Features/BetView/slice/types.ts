@@ -6,6 +6,7 @@ export type BetViewState = {
   error?: BetViewErrorType | null;
   bet?: SingleBet | MultiBet | null;
   betMetaType?: string | null;
+  nextRefreshTs?: number | null;
 };
 
 export enum BetViewErrorType {

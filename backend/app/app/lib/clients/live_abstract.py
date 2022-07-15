@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 from typing import List
 
-from app.lib.schemas.live_racing import RacePoolTotals, RaceWithStarterDetails, StarterDetails, TrackWithRaceDetails
+from app.lib.schemas.live_racing import RacePoolTotals, StarterDetails, TrackWithRaceDetails
 
 
 class AbstractLiveRacingClientException(Exception):

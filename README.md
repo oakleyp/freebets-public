@@ -79,3 +79,10 @@ With the shiny consumer-grade docs out of the way for now, the rest of my docume
 ## Contributing
 
 I don't expect any contributions at this point, but will be glad to accept them as they come with the time I have available and the loosest guarantees you can imagine.
+
+## References
+
+Gramm, Marshall, and Douglas H. Owens. “Efficiency in Pari-Mutuel Betting Markets across Wagering Pools in the Simulcast Era.” Southern Economic Journal, vol. 72, no. 4, 2006, pp. 926–37. JSTOR, https://doi.org/10.2307/20111861. Accessed 14 Jul. 2022.
+Ziemba, William T., "Parimutuel Betting Markets: Racetracks and Lotteries Revisited" (December 21, 2021). Available at SSRN: https://ssrn.com/abstract=3865785 or http://dx.doi.org/10.2139/ssrn.3865785
+Peter Cotton, "Inferring Relative Ability from Winning Probability in Multientrant Contests", SIAM Journal on Financial Mathematics 2021 12:1, 295-317
+
