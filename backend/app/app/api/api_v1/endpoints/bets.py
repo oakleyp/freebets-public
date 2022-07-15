@@ -3,7 +3,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app import schemas
@@ -28,11 +27,31 @@ router = APIRouter()
 # DEFAULT_TRACK_CODES = ["kee", "cd", "mrn"]
 DEFAULT_TRACK_CODES = []
 DEFAULT_BET_STRAT_TYPES = list(
-    map(str, [BetStrategyType.BOOK_ALL_WIN_ARB, BetStrategyType.BOOK_BOX_WIN_ARB, BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB, BetStrategyType.BOOK_DR_Z_PLACE_BET, BetStrategyType.BOOK_DR_Z_SHOW_BET],)
+    map(
+        str,
+        [
+            BetStrategyType.BOOK_ALL_WIN_ARB,
+            BetStrategyType.BOOK_BOX_WIN_ARB,
+            BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB,
+            BetStrategyType.BOOK_DR_Z_PLACE_BET,
+            BetStrategyType.BOOK_DR_Z_SHOW_BET,
+        ],
+    )
 )
 DEFAULT_BET_TYPES = list(
-    map(str, [BetType.ALL_WIN_ARB, BetType.BOX_WIN_ARB, BetType.WIN_BET, BetType.PLACE_BET, BetType.SHOW_BET, BetType.PLACE_SHOW_ARB])
+    map(
+        str,
+        [
+            BetType.ALL_WIN_ARB,
+            BetType.BOX_WIN_ARB,
+            BetType.WIN_BET,
+            BetType.PLACE_BET,
+            BetType.SHOW_BET,
+            BetType.PLACE_SHOW_ARB,
+        ],
+    )
 )
+
 
 def get_next_refresh_ts(db: Session) -> int:
     # Get the time to next refresh from the latest processor refresh log.
@@ -146,9 +165,13 @@ def read_bet(*, db: Session = Depends(deps.get_db), id: int,) -> Any:
 
     if len(bet.sub_bets) < 1:
         return BetGetResponse(
-            data=bet_conv.create_single_bet_result(bet), result_type="single", next_refresh_ts=next_refresh_ts
+            data=bet_conv.create_single_bet_result(bet),
+            result_type="single",
+            next_refresh_ts=next_refresh_ts,
         )
     else:
         return BetGetResponse(
-            data=bet_conv.create_multi_bet_result(bet), result_type="multi", next_refresh_ts=next_refresh_ts
+            data=bet_conv.create_multi_bet_result(bet),
+            result_type="multi",
+            next_refresh_ts=next_refresh_ts,
         )

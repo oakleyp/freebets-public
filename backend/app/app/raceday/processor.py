@@ -11,7 +11,11 @@ from app.core.config import settings
 from app.lib.clients.demo_live_racing_client import DemoLiveRacingClient
 from app.lib.clients.live_abstract import AbstractLiveRacingClient
 from app.lib.crawlers.live_racing import LiveRacingCrawler, LiveRacingCrawlerException
-from app.lib.schemas.live_racing import RacePoolTotals, StarterDetails, TrackWithRaceDetails
+from app.lib.schemas.live_racing import (
+    RacePoolTotals,
+    StarterDetails,
+    TrackWithRaceDetails,
+)
 from app.ml.predictor.race_predictor import RacePredictor
 from app.models.bet import Bet
 from app.models.race import Race
@@ -45,7 +49,7 @@ class RaceWatcher(BaseModel):
         )
 
     @classmethod
-    def from_race(cls, race: Race, nct: datetime) -> 'RaceWatcher':
+    def from_race(cls, race: Race, nct: datetime) -> "RaceWatcher":
         return cls(
             race_id=race.id,
             race_md5=race.md5_hash().hexdigest(),
@@ -265,7 +269,9 @@ class RaceDayProcessor:
             self._refresh_race_predictions(race)
 
             logger.debug("Regenerating bets for race %s", race)
-            created_bets = self._refresh_race_bets(race, use_pool_totals=use_pool_totals)
+            created_bets = self._refresh_race_bets(
+                race, use_pool_totals=use_pool_totals
+            )
             result_bets.extend(created_bets)
 
         min_nct = self._get_min_watcher_nct()
@@ -288,7 +294,7 @@ class RaceDayProcessor:
             races_canon.extend(LiveTrackBasicCanonical(track).convert())
 
         for race in races_canon:
-            new_race_hash = race.md5_hash().hexdigest()            
+            new_race_hash = race.md5_hash().hexdigest()
 
             # If this proc should not watch the race, do nothing.
             # This is in consideration of the fact that multiple rdprocs
@@ -299,11 +305,7 @@ class RaceDayProcessor:
                 continue
 
             maybe_existing_race = (
-                self.db.query(Race)
-                .filter(
-                    Race.race_md5_hex == new_race_hash
-                )
-                .first()
+                self.db.query(Race).filter(Race.race_md5_hex == new_race_hash).first()
             )
 
             if not maybe_existing_race:
@@ -323,7 +325,6 @@ class RaceDayProcessor:
 
             self._update_watcher(race, time_context)
 
-
     def _remove_expired_watchers(self, time_context: TimeContext) -> None:
         """
             Remove all watchers from watching_races where
@@ -341,7 +342,7 @@ class RaceDayProcessor:
             if nct is None:
                 del self.watching_races[hash]
                 races_to_remove.append(race_id)
-            
+
             existing_race_bets = (
                 self.db.query(Bet).filter(Bet.race.has(Race.id == race_id)).all()
             )
@@ -393,7 +394,9 @@ class RaceDayProcessor:
 
         return races_to_refresh
 
-    def _refresh_race_bets(self, race: Race, use_pool_totals: bool = False) -> List[Bet]:
+    def _refresh_race_bets(
+        self, race: Race, use_pool_totals: bool = False
+    ) -> List[Bet]:
         """Regenerate bets for the given race."""
         existing_race_bets: List[Bet] = (
             self.db.query(Bet).filter(Bet.race.has(Race.id == race.id)).all()
@@ -433,7 +436,7 @@ class RaceDayProcessor:
 
         for bet in result_bets:
             bet_hash = bet.md5_hash().hexdigest()
-            
+
             if bet_hash in bet_map:
                 bet_map[bet_hash].update_shallow(bet)
                 updates_seen.add(bet_hash)
@@ -547,7 +550,9 @@ class RaceDayProcessor:
 
     def _ingest_race_pool_totals(self, race: Race) -> RacePoolTotals:
         """Refresh the race pool totals for the given race."""
-        pool_totals = self.live_race_crawler.get_race_pool_totals(race.track_code, race.race_number, race.race_type)
+        pool_totals = self.live_race_crawler.get_race_pool_totals(
+            race.track_code, race.race_number, race.race_type
+        )
 
         race.win_pool_total = pool_totals.win_total
         race.place_pool_total = pool_totals.place_total

@@ -1,10 +1,11 @@
 import math
-from typing import List, Tuple
+from typing import List
+
+import hyperopt
+from pydantic import BaseModel
 
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
-import hyperopt
-from pydantic import BaseModel
 
 # UNUSED: This was work started before realizing that the Dr. Z equations below
 # would require an NLP solver (the Dr. used CONOPT / GRG). I may revisit this in the future,
@@ -50,9 +51,10 @@ BREAKAGE = 20
 
 #         payout_applied_breakage = 1 + (1 / BREAKAGE(payout_applied_breakage))
 
-    
 
-def get_place_show_all_utility(race: Race, place_outlay: float, show_outlay: float, total_wealth: float) -> float:
+def get_place_show_all_utility(
+    race: Race, place_outlay: float, show_outlay: float, total_wealth: float
+) -> float:
     entries: List[RaceEntry] = race.active_entries()
 
     total: float = 0
@@ -75,12 +77,16 @@ def get_place_show_all_utility(race: Race, place_outlay: float, show_outlay: flo
                 q_i = 1 / entries[i].latest_odds()
                 q_j = 1 / entries[j].latest_odds()
                 q_k = 1 / entries[k].latest_odds()
-                
+
                 # TODO: Is there a better alternative to harville probability?
-                harville_prob_place_show = (q_i * q_j * q_k) /  ((1-q_i) * (1-q_i-q_j))
-                rebate = calc_rebate(race, entries, place_outlay, show_outlay, i, j, k, total_wealth)
-                
-                k_total += (harville_prob_place_show * math.log(rebate))
+                harville_prob_place_show = (q_i * q_j * q_k) / (
+                    (1 - q_i) * (1 - q_i - q_j)
+                )
+                rebate = calc_rebate(
+                    race, entries, place_outlay, show_outlay, i, j, k, total_wealth
+                )
+
+                k_total += harville_prob_place_show * math.log(rebate)
                 j_total += k_total
 
             i_total += j_total
@@ -89,17 +95,27 @@ def get_place_show_all_utility(race: Race, place_outlay: float, show_outlay: flo
 
     return total
 
-def calc_rebate(race: Race, entries: List[RaceEntry], place_outlay: float, show_outlay: float, i: int, j: int, k: int, w0: float) -> float:
+
+def calc_rebate(
+    race: Race,
+    entries: List[RaceEntry],
+    place_outlay: float,
+    show_outlay: float,
+    i: int,
+    j: int,
+    k: int,
+    w0: float,
+) -> float:
     P = race.place_pool_total
     S = race.show_pool_total
     P_i = entries[i].place_pool_total
     P_j = entries[j].place_pool_total
     P_ij = P_i + P_j
-    p_i = place_outlay # Could vary
-    p_j = place_outlay # Could vary
-    p_l = lambda l: place_outlay # Could vary
+    p_i = place_outlay  # Could vary
+    p_j = place_outlay  # Could vary
+    p_l = lambda l: place_outlay  # Could vary
 
-    s_l = lambda l: show_outlay # Could vary
+    s_l = lambda l: show_outlay  # Could vary
     s_i = show_outlay
     s_j = show_outlay
     s_k = show_outlay
@@ -113,40 +129,47 @@ def calc_rebate(race: Race, entries: List[RaceEntry], place_outlay: float, show_
     place_bet_effect = (p_i / (p_i + P_i)) + (p_j / (p_j + P_j))
 
     player_show_total_outlay = sum([s_l(i) for i in range(len(entries))])
-    show_bet_return = ((Q * (S + player_show_total_outlay)) - (s_i + s_j + s_k + S_ijk)) / 3
+    show_bet_return = (
+        (Q * (S + player_show_total_outlay)) - (s_i + s_j + s_k + S_ijk)
+    ) / 3
     show_bet_effect = (s_i / (s_i + S_i)) + (s_j / (s_j + S_j)) + (s_k / (s_k + S_k))
 
     sum_s_l: float = 0
     for i_2 in range(len(entries)):
         if i_2 == i or i_2 == j or i_2 == k:
             continue
-    
+
         sum_s_l += s_l(i_2)
-        
+
     sum_p_l: float = 0
     for i_2 in range(len(entries)):
         if i_2 == i or i_2 == j:
             continue
-            
+
         sum_p_l += p_l(i_2)
-    
-    total = (place_bet_return * place_bet_effect) + (show_bet_return * show_bet_effect) + (w0 - sum_s_l - sum_p_l)
+
+    total = (
+        (place_bet_return * place_bet_effect)
+        + (show_bet_return * show_bet_effect)
+        + (w0 - sum_s_l - sum_p_l)
+    )
 
     assert total > 0, (
         f"domain error: pl={p_l(0)}; sl={s_l(0)}; "
-        f"({place_bet_return} * {place_bet_effect} = {place_bet_return * place_bet_effect})" 
+        f"({place_bet_return} * {place_bet_effect} = {place_bet_return * place_bet_effect})"
         f" + ({show_bet_return} * {show_bet_effect} = {show_bet_return * show_bet_effect})"
         f" + {w0} - {sum_s_l} - {sum_p_l} = {total}"
     )
-    
+
     return total
+
 
 def hyperopt_objective(params) -> float:
     expected_utility = get_place_show_all_utility(
-        params['race'],
-        params['place_outlay'],
-        params['show_outlay'],
-        params['total_wealth'],
+        params["race"],
+        params["place_outlay"],
+        params["show_outlay"],
+        params["total_wealth"],
     )
 
     return 0 - expected_utility
@@ -166,12 +189,11 @@ def get_best_place_show_bets_all(race: Race, max_spend: float) -> DrZPlaceShowRe
 
     # Start value of 2 is based on Keeneland min bet, may vary
     params_space = {
-        'race': race,
-        'place_outlay': hyperopt.hp.uniform('place_outlay', 2, max_possible_bet),
-        'show_outlay': hyperopt.hp.uniform('show_outlay', 2, max_possible_bet),
-        'total_wealth': max_spend,
+        "race": race,
+        "place_outlay": hyperopt.hp.uniform("place_outlay", 2, max_possible_bet),
+        "show_outlay": hyperopt.hp.uniform("show_outlay", 2, max_possible_bet),
+        "total_wealth": max_spend,
     }
-
 
     best = hyperopt.fmin(
         hyperopt_objective,
@@ -182,10 +204,12 @@ def get_best_place_show_bets_all(race: Race, max_spend: float) -> DrZPlaceShowRe
     )
 
     total_outlay = max_spend
-    place_outlay = best['place_outlay']
-    show_outlay = best['show_outlay']
+    place_outlay = best["place_outlay"]
+    show_outlay = best["show_outlay"]
 
-    expected_value = get_place_show_all_utility(race, place_outlay, show_outlay, total_outlay)
+    expected_value = get_place_show_all_utility(
+        race, place_outlay, show_outlay, total_outlay
+    )
 
     return DrZPlaceShowResult(
         total_outlay=total_outlay,

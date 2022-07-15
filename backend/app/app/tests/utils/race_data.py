@@ -96,9 +96,11 @@ def create_race_details(
     effective_dt_range = dt_range
     if not effective_dt_range:
         effective_dt_range = (
-            datetime.now(timezone.utc),
-            datetime.now(timezone.utc) + timedelta(hours=2),
-        ),
+            (
+                datetime.now(timezone.utc),
+                datetime.now(timezone.utc) + timedelta(hours=2),
+            ),
+        )
 
     post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
 
@@ -126,13 +128,19 @@ def create_race_details(
     )
 
 
-def create_track_with_race_details_n(n: int, race_details_args: Dict[str, Any] = {}, races_per_track: int = 2) -> List[TrackWithRaceDetails]:
-    return [create_track_with_race_details(race_details_args=race_details_args, races_per_track=races_per_track) for _ in range(n)]
+def create_track_with_race_details_n(
+    n: int, race_details_args: Dict[str, Any] = {}, races_per_track: int = 2
+) -> List[TrackWithRaceDetails]:
+    return [
+        create_track_with_race_details(
+            race_details_args=race_details_args, races_per_track=races_per_track
+        )
+        for _ in range(n)
+    ]
 
 
 def create_track_with_race_details(
-    race_details_args: Dict[str, Any] = {},
-    races_per_track: int = 2,
+    race_details_args: Dict[str, Any] = {}, races_per_track: int = 2,
 ) -> TrackWithRaceDetails:
     return TrackWithRaceDetails(
         brisCode=random_lower_string(length=3),
@@ -145,7 +153,9 @@ def create_track_with_race_details(
         allowsConditionalWagering=True,
         surfaceConditions=[SurfaceConditions(type="dirt", condition="fast",)],
         featured=[Featured(featuredTrackId=1, label=random_lower_string(), races=3,)],
-        races=create_race_details_n(races_per_track, adjacent=True, **race_details_args),
+        races=create_race_details_n(
+            races_per_track, adjacent=True, **race_details_args
+        ),
     )
 
 
@@ -225,7 +235,9 @@ def create_race_and_starter_details(
             datetime.now(timezone.utc) + timedelta(hours=2),
         )
 
-    post_time = random_datetime_in_range(*effective_dt_range, precision_modifier=precision_mod)
+    post_time = random_datetime_in_range(
+        *effective_dt_range, precision_modifier=precision_mod
+    )
 
     print(*effective_dt_range, post_time)
 
@@ -261,7 +273,7 @@ def create_starters_n(n: int) -> List[StarterDetails]:
     odds = [random.randint(3, 50) for _ in active_starters]
 
     odds_sum = sum(odds)
-    odds = [odds/odds_sum for odds in odds]
+    odds = [odds / odds_sum for odds in odds]
 
     for starter, odds in zip(active_starters, odds):
         starter.morningLineOdds = f"{1/odds}/1"
@@ -269,7 +281,6 @@ def create_starters_n(n: int) -> List[StarterDetails]:
         starter.liveOdds = f"{1/odds}/1"
 
     return starters
-
 
 
 def create_starter(horse_num: int, pp: int) -> StarterDetails:
@@ -351,7 +362,10 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         scratched=[False, False, False, False, False, False][random.randint(0, 5)],
     )
 
-def create_entry_pool_totals(entry: StarterDetails, pool_total: int = 2_000_000, num_betters: int = None) -> EntryPoolTotals:
+
+def create_entry_pool_totals(
+    entry: StarterDetails, pool_total: int = 2_000_000, num_betters: int = None
+) -> EntryPoolTotals:
     entry_odds_frac = 1 / entry.liveOddsNumeric()
 
     def rand_variance():
@@ -364,11 +378,15 @@ def create_entry_pool_totals(entry: StarterDetails, pool_total: int = 2_000_000,
         show_total=(pool_total * entry_odds_frac) + rand_variance() * pool_total,
     )
 
-def create_race_pool_totals(race: RaceWithStarterDetails, num_betters: int = None) -> RacePoolTotals:
+
+def create_race_pool_totals(
+    race: RaceWithStarterDetails, num_betters: int = None
+) -> RacePoolTotals:
     pool_total = random.randint(30_000, 2_000_000)
 
     entries_totals = {
-        entry.programNumber: create_entry_pool_totals(entry, pool_total=pool_total) for entry in race.starters
+        entry.programNumber: create_entry_pool_totals(entry, pool_total=pool_total)
+        for entry in race.starters
     }
 
     win_total: float = 0

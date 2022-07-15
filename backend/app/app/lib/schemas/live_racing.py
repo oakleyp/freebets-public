@@ -207,6 +207,7 @@ class EntryPoolTotals(BaseModel):
     place_total: float
     show_total: float
 
+
 class RacePoolTotals(BaseModel):
     win_total: float
     place_total: float

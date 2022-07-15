@@ -89,7 +89,11 @@ class RaceEntry(Base):
         return None
 
     def has_valid_pool_totals(self) -> bool:
-        if not (self.win_pool_total > 0 and self.place_pool_total > 0 and self.show_pool_total > 0):
+        if not (
+            self.win_pool_total > 0
+            and self.place_pool_total > 0
+            and self.show_pool_total > 0
+        ):
             return False
 
         return True

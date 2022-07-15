@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
-from itertools import combinations, permutations
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
+from itertools import permutations
 from typing import Any, Dict, List, Tuple, Union
 
 from app.models.bet import Bet
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
-from app.raceday.bet_strategy.dr_z_eq import get_expected_place_val_per_dollar, get_expected_show_val_per_dollar
+from app.raceday.bet_strategy.dr_z_eq import (
+    get_expected_place_val_per_dollar,
+    get_expected_show_val_per_dollar,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -36,14 +39,14 @@ class BetStrategyType(Enum):
     BOOK_ALL_WIN_ARB = (5,)
     BOOK_BOX_WIN_ARB = (6,)
 
-    BOOK_DR_Z_PLACE_SHOW_ARB = (7)
+    BOOK_DR_Z_PLACE_SHOW_ARB = 7
     AI_DR_Z_PLACE_SHOW_ARB = (8,)
 
     BOOK_PLACE_BET = (9,)
     BOOK_SHOW_BET = (10,)
 
-    BOOK_DR_Z_PLACE_BET = (11, )
-    BOOK_DR_Z_SHOW_BET = (12, )
+    BOOK_DR_Z_PLACE_BET = (11,)
+    BOOK_DR_Z_SHOW_BET = (12,)
 
     def to_json(self):
         return str(self)
@@ -156,9 +159,10 @@ class MultiBetResult:
 
         return root_bet
 
+
 class BetOutlayStrategy(ABC):
     @abstractmethod
-    def outlay(self, bet: 'BetTypeImpl') -> float:
+    def outlay(self, bet: "BetTypeImpl") -> float:
         """Determine the outlay (money down) for the given bet."""
         raise NotImplementedError(
             "outlay() not implemented for %s" % self.__class__.__name__
@@ -167,7 +171,7 @@ class BetOutlayStrategy(ABC):
 
 class BetSortStrategy(ABC):
     @abstractmethod
-    def sort(self, bets: List['BetTypeImpl']) -> List['BetTypeImpl']:
+    def sort(self, bets: List["BetTypeImpl"]) -> List["BetTypeImpl"]:
         """Sort the given bets using a defined strategy, in order of best to worst."""
         raise NotImplementedError(
             "sort() not implemented for %s" % self.__class__.__name__
@@ -190,7 +194,7 @@ class FlatBetOutlayStrategy(BetOutlayStrategy):
         super().__init__()
         self._outlay = outlay
 
-    def outlay(self, bet: 'BetTypeImpl') -> float:
+    def outlay(self, bet: "BetTypeImpl") -> float:
         """Return a static outlay."""
         return self._outlay
 
@@ -198,11 +202,19 @@ class FlatBetOutlayStrategy(BetOutlayStrategy):
 class AvgCostRewardSortStrategy(BetSortStrategy):
     """Strategy that sorts bets in order of their cost/avg_reward ratio (best first)."""
 
-    def sort(self, bets: List['BetTypeImpl']) -> List['BetTypeImpl']:
+    def sort(self, bets: List["BetTypeImpl"]) -> List["BetTypeImpl"]:
         return sorted(bets, key=lambda a: a.cost() / (a.avg_reward() or 1))
 
+
 class BetTypeImpl(ABC):
-    def __init__(self, *, race: Race, horses: List[RaceEntry], selection: List[RaceEntry], strategy: BetStrategy):
+    def __init__(
+        self,
+        *,
+        race: Race,
+        horses: List[RaceEntry],
+        selection: List[RaceEntry],
+        strategy: BetStrategy,
+    ):
         self.race = race
         self.horses = horses
         self.selection = selection
@@ -234,6 +246,7 @@ class BetTypeImpl(ABC):
         raise NotImplementedError(
             "avg_reward() not implemented for %s" % self.__class__.__name__
         )
+
     @abstractmethod
     def min_reward(self) -> float:
         raise NotImplementedError(
@@ -355,7 +368,9 @@ class WinAllArbBet(BetTypeImpl):
     def avg_reward(self):
         # This assumes that all horses have equal chance of winning,
         # obviously need to weight by odds
-        return sum((b.max_reward() + b.outlay()) * b.effective_proba() for b in self.bets) / len(self.bets)
+        return sum(
+            (b.max_reward() + b.outlay()) * b.effective_proba() for b in self.bets
+        ) / len(self.bets)
 
     def max_reward(self):
         return max(b.max_reward() for b in self.bets)
@@ -447,13 +462,16 @@ class WinBoxArbBet(BetTypeImpl):
             odds=self.odds(),
         )
 
+
 def calc_place_reward(race: Race, place_horses: List[RaceEntry], selection: RaceEntry):
     total_place_pool = race.place_pool_total
 
     (horse_1, horse_2) = place_horses
 
     # Get remaining pool to be distributed by subtracting 2 place horses from net place pool
-    pool_dividend = total_place_pool - (horse_1.place_pool_total + horse_2.place_pool_total)
+    pool_dividend = total_place_pool - (
+        horse_1.place_pool_total + horse_2.place_pool_total
+    )
 
     # 2 winners, since this is place, divide by 2
     pool_split = pool_dividend / 2
@@ -466,22 +484,34 @@ def calc_place_reward(race: Race, place_horses: List[RaceEntry], selection: Race
 
     return indiv_payout
 
+
 def calc_place_reward_redux(race: Race, selection: RaceEntry, other_horse: RaceEntry):
-    return ((race.place_pool_total - other_horse.place_pool_total) / selection.place_pool_total) - 1
+    return (
+        (race.place_pool_total - other_horse.place_pool_total)
+        / selection.place_pool_total
+    ) - 1
+
 
 def calc_avg_place_reward(race: Race):
     total: float = 0
     perms = list(permutations(race.entries, 2))
     for selection, other_horse in perms:
         total += calc_place_reward_redux(race, selection, other_horse)
-    
+
     return total / len(perms)
 
-def calc_show_reward(race: Race, selection: RaceEntry, other_horse: RaceEntry, third_horse: RaceEntry):
+
+def calc_show_reward(
+    race: Race, selection: RaceEntry, other_horse: RaceEntry, third_horse: RaceEntry
+):
     total_show_pool = race.show_pool_total
 
     # Get remaining pool to be distributed by subtracting 2 place horses from net place pool
-    pool_dividend = total_show_pool - (selection.show_pool_total + other_horse.show_pool_total + third_horse.show_pool_total)
+    pool_dividend = total_show_pool - (
+        selection.show_pool_total
+        + other_horse.show_pool_total
+        + third_horse.show_pool_total
+    )
 
     # 3 winners, since this is show, divide by 3
     pool_split = pool_dividend / 3
@@ -494,13 +524,14 @@ def calc_show_reward(race: Race, selection: RaceEntry, other_horse: RaceEntry, t
 
     return indiv_payout
 
+
 def calc_avg_show_reward(race: Race):
     total: float = 0
     perms = list(permutations(race.entries, 3))
 
     for (selection, other_horse, third_horse) in perms:
         total += calc_show_reward(race, selection, other_horse, third_horse)
-    
+
     return total / len(perms)
 
 
@@ -532,14 +563,20 @@ class PlaceBet(BetTypeImpl):
         selection = self.selection
 
         # Make the lowest odds horse other_horse, or the next-lowest
-        # if this bet is already targetting it, so the remaining pool 
+        # if this bet is already targetting it, so the remaining pool
         # is large as possible
         entries_worst = self.entries.copy()
         entries_worst.sort(key=lambda e: e.place_pool_total)
-        other_horse = entries_worst[0] if not entries_worst[0].id == selection.id else entries_worst[1]
+        other_horse = (
+            entries_worst[0]
+            if not entries_worst[0].id == selection.id
+            else entries_worst[1]
+        )
 
         # Get remaining pool to be distributed by subtracting 2 place horses from net place pool
-        pool_dividend = total_place_pool - (other_horse.place_pool_total + selection.place_pool_total)
+        pool_dividend = total_place_pool - (
+            other_horse.place_pool_total + selection.place_pool_total
+        )
 
         # 2 winners, since this is place, divide by 2
         pool_split = pool_dividend / 2
@@ -577,8 +614,17 @@ class PlaceBet(BetTypeImpl):
 
 
 class DrZPlaceBet(PlaceBet):
-    def __init__(self, *, race: Race, entries: List[RaceEntry], selection: List[RaceEntry], strategy: BetStrategy) -> None:
-        super().__init__(race=race, entries=entries, selection=selection, strategy=strategy)
+    def __init__(
+        self,
+        *,
+        race: Race,
+        entries: List[RaceEntry],
+        selection: List[RaceEntry],
+        strategy: BetStrategy,
+    ) -> None:
+        super().__init__(
+            race=race, entries=entries, selection=selection, strategy=strategy
+        )
         self.bet_strategy_type = BetStrategyType.BOOK_DR_Z_PLACE_BET
 
     def expected_place_val_per_dollar(self) -> float:
@@ -616,15 +662,27 @@ class ShowBet(BetTypeImpl):
         selection = self.selection
 
         # Make the lowest odds horse other_horse, or the next-lowest
-        # if this bet is already targetting it, so the remaining pool 
+        # if this bet is already targetting it, so the remaining pool
         # is large as possible
         entries_worst = self.entries.copy()
         entries_worst.sort(key=lambda e: e.show_pool_total)
-        other_horse = entries_worst[0] if not entries_worst[0].id == selection.id else entries_worst[1]
-        third_horse = entries_worst[1] if not entries_worst[0].id == selection.id else entries_worst[2]
+        other_horse = (
+            entries_worst[0]
+            if not entries_worst[0].id == selection.id
+            else entries_worst[1]
+        )
+        third_horse = (
+            entries_worst[1]
+            if not entries_worst[0].id == selection.id
+            else entries_worst[2]
+        )
 
         # Get remaining pool to be distributed by subtracting 3 show horses from net show pool
-        pool_dividend = total_show_pool - (other_horse.show_pool_total + selection.show_pool_total + third_horse.show_pool_total)
+        pool_dividend = total_show_pool - (
+            other_horse.show_pool_total
+            + selection.show_pool_total
+            + third_horse.show_pool_total
+        )
 
         # 3 winners, since this is show, divide by 3
         pool_split = pool_dividend / 3
@@ -662,8 +720,17 @@ class ShowBet(BetTypeImpl):
 
 
 class DrZShowBet(ShowBet):
-    def __init__(self, *, race: Race, entries: List[RaceEntry], selection: List[RaceEntry], strategy: BetStrategy) -> None:
-        super().__init__(race=race, entries=entries, selection=selection, strategy=strategy)
+    def __init__(
+        self,
+        *,
+        race: Race,
+        entries: List[RaceEntry],
+        selection: List[RaceEntry],
+        strategy: BetStrategy,
+    ) -> None:
+        super().__init__(
+            race=race, entries=entries, selection=selection, strategy=strategy
+        )
         self.bet_strategy_type = BetStrategyType.BOOK_DR_Z_SHOW_BET
 
     def expected_show_val_per_dollar(self) -> float:
@@ -690,13 +757,15 @@ class DrZPlaceShowArbBet(BetTypeImpl):
         self.bet_strategy_type: BetStrategyType = BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB
 
         (self.place_bets, self.show_bets) = self._generate_viable_bets()
-        self.bets = (list(self.place_bets.values()) + list(self.show_bets.values()))
+        self.bets = list(self.place_bets.values()) + list(self.show_bets.values())
 
-    def _generate_viable_bets(self) -> Tuple[Dict[int, BetTypeImpl], Dict[int, BetTypeImpl]]:
+    def _generate_viable_bets(
+        self,
+    ) -> Tuple[Dict[int, BetTypeImpl], Dict[int, BetTypeImpl]]:
         """Generates all place and show bets where the expected return is greater than 1."""
         place_entries: List[RaceEntry] = []
         show_entries: List[RaceEntry] = []
-        
+
         for entry in self.race.entries:
             if get_expected_place_val_per_dollar(self.race, entry) > 1.18:
                 place_entries.append(entry)
@@ -709,17 +778,26 @@ class DrZPlaceShowArbBet(BetTypeImpl):
 
         # TODO - revisit varying outlay by bet strength (expected return)
         for entry in place_entries:
-            bet = DrZPlaceBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
+            bet = DrZPlaceBet(
+                race=self.race,
+                entries=self.entries,
+                selection=[entry],
+                strategy=self.strategy,
+            )
             if bet.effective_proba() > (1 / 8):
                 place_results[entry.id] = bet
 
         for entry in show_entries:
-            bet = DrZShowBet(race=self.race, entries=self.entries, selection=[entry], strategy=self.strategy)
+            bet = DrZShowBet(
+                race=self.race,
+                entries=self.entries,
+                selection=[entry],
+                strategy=self.strategy,
+            )
             if bet.effective_proba() > (1 / 8):
                 show_results[entry.id] = bet
 
         return (place_results, show_results)
-
 
     def min_reward(self) -> float:
         # If not at least one show or one place bet per entry, the min is 0
@@ -748,7 +826,9 @@ class DrZPlaceShowArbBet(BetTypeImpl):
         place_winners = place_sorted[0:2]
         show_winners = show_sorted[0:3]
 
-        return sum([bet.max_reward() + bet.outlay() for bet in (place_winners + show_winners)])
+        return sum(
+            [bet.max_reward() + bet.outlay() for bet in (place_winners + show_winners)]
+        )
 
     def min_bet(self) -> float:
         if len(self.bets) < 1:

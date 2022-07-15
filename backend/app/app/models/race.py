@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, List, Tuple
-
-from sqlalchemy import BigInteger, Boolean, Column, Date, Integer, String, Float, func
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.hybrid import hybrid_property
 from hashlib import md5
+from typing import TYPE_CHECKING, List
+
+from sqlalchemy import BigInteger, Boolean, Column, Date, Float, Integer, String, func
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
 from app.db.custom_types import TZDateTime
@@ -11,6 +11,7 @@ from app.db.custom_types import TZDateTime
 if TYPE_CHECKING:
     from .race_entry import RaceEntry  # noqa F401
     from .bet import Bet  # noqa F401
+
 
 class Race(Base):
     id = Column(Integer, primary_key=True, index=True)
@@ -58,11 +59,15 @@ class Race(Base):
     def race_md5_hex(cls):
         return func.md5(str(cls.race_date) + cls.track_code + str(cls.race_number))
 
-    def active_entries(self) -> List['RaceEntry']:
+    def active_entries(self) -> List["RaceEntry"]:
         return [entry for entry in self.entries if not entry.scratched]
 
     def has_valid_pool_totals(self) -> bool:
-        if not (self.win_pool_total > 0 and self.place_pool_total > 0 and self.show_pool_total > 0):
+        if not (
+            self.win_pool_total > 0
+            and self.place_pool_total > 0
+            and self.show_pool_total > 0
+        ):
             return False
 
         for entry in self.entries:
@@ -83,7 +88,7 @@ class Race(Base):
         base = str(self.race_date) + self.track_code + str(self.race_number)
         return md5(base.encode())
 
-    def update_shallow(self, other: 'Race'):
+    def update_shallow(self, other: "Race"):
         """
             Update race properties based on a shallow race fetch.
 
