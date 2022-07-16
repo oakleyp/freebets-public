@@ -63,6 +63,8 @@ def get_next_refresh_ts(db: Session) -> int:
 
     now = datetime.now(timezone.utc)
 
+    print(settings.EXPECTED_PROCESS_TIME_SECS)
+
     if latest_refresh_log and latest_refresh_log.next_check_time >= now:
         nct: datetime = latest_refresh_log.next_check_time
         next_refresh_ts = int(nct.timestamp() * 1000)

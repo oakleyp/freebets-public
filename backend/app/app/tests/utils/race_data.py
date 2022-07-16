@@ -373,9 +373,9 @@ def create_entry_pool_totals(
 
     return EntryPoolTotals(
         program_no=entry.programNumber,
-        win_total=(pool_total * entry_odds_frac) + rand_variance() * pool_total,
-        place_total=(pool_total * entry_odds_frac) + rand_variance() * pool_total,
-        show_total=(pool_total * entry_odds_frac) + rand_variance() * pool_total,
+        win_total=(pool_total * entry_odds_frac) + entry.liveOddsNumeric() * rand_variance() * pool_total,
+        place_total=(pool_total * entry_odds_frac) + entry.liveOddsNumeric() * rand_variance() * pool_total,
+        show_total=(pool_total * entry_odds_frac) + entry.liveOddsNumeric() * rand_variance() * pool_total,
     )
 
 
@@ -385,7 +385,7 @@ def create_race_pool_totals(
     num_betters: int = None,
 ) -> RacePoolTotals:
     if not current_pool_totals:
-        pool_total = random.randint(30_000, 2_000_000)
+        pool_total = random.randint(30_000, 50_000)
     else:
         pool_total = (
             current_pool_totals.win_total

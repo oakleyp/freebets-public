@@ -35,6 +35,21 @@ export type MultiBet = BaseBet & {
   sub_bets: SingleBet[];
 };
 
+export function narrowBetType(bet: MultiBet | SingleBet, type: string) {
+  const typeMap = {
+    single: () => bet as SingleBet,
+    multi: () => bet as MultiBet,
+  };
+
+  const converter = typeMap[type];
+
+  if (typeof converter !== 'function') {
+    throw new TypeError(`Unknown bet type ${type}`);
+  }
+
+  return converter();
+}
+
 export interface BetsListResponse {
   single_bets: SingleBet[];
   multi_bets: MultiBet[];

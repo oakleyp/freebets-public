@@ -83,6 +83,7 @@ class DemoLiveRacingClient(AbstractLiveRacingClient):
     def _set_current_race_flags(
         self, track_races: List[TrackWithRaceDetails]
     ) -> List[TrackWithRaceDetails]:
+        """Set the next race (that has not already passed) as the current race."""
         now = datetime.now(timezone.utc)
 
         for track_race in track_races:

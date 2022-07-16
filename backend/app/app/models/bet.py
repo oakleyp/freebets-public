@@ -71,6 +71,8 @@ class Bet(Base):
     _active_entries = relationship("RaceEntry", secondary=bet_active_entries)
     inactive_entries = relationship("RaceEntry", secondary=bet_inactive_entries)
 
+    bet_md5_hex = Column(String, nullable=False, unique=True)
+
     def md5_hash(self):
         race: Race = self.race
         active_entries: List["RaceEntry"] = self.active_entries
@@ -97,8 +99,6 @@ class Bet(Base):
             base = "multi" + parent.md5_hash().hexdigest() + base
 
         return md5(base.encode())
-
-    bet_md5_hex = Column(String, nullable=False, unique=True)
 
     @hybrid_property
     def cost(self) -> float:

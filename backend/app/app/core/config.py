@@ -91,7 +91,7 @@ class Settings(BaseSettings):
     RMQ_CRAWLER_DOWNLOAD_EXCHANGE: str
 
     MAX_SLEEP_TIME_SECS: Optional[int] = 60 * 5
-    EXPECTED_PROCESS_TIME_SECS: Optional[int] = 60
+    EXPECTED_PROCESS_TIME_SECS: Optional[int] = 5
 
     class Config:
         case_sensitive = True

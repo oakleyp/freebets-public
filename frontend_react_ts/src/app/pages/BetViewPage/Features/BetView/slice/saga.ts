@@ -1,4 +1,4 @@
-import { call, put, select, takeLatest, all } from 'redux-saga/effects';
+import { call, put, select, takeLatest, all, delay } from 'redux-saga/effects';
 
 import { request } from 'utils/request';
 import { selectBetId } from './selectors';
@@ -23,9 +23,33 @@ export function* getBet() {
   }
 }
 
+export function* getBetBackground() {
+  const betId = yield select(selectBetId);
+  const requestURL = `${process.env.REACT_APP_API_URL}/api/v1/bets/${betId}`;
+
+  try {
+    // Call our request helper (see 'utils/request')
+    const betData: BetViewResponse = yield call(request, requestURL);
+    yield put(actions.betLoadedBackground(betData));
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      yield put(
+        actions.betLoadingErrorBackground(BetViewErrorType.NOT_FOUND_ERROR),
+      );
+    } else {
+      yield put(
+        actions.betLoadingErrorBackground(BetViewErrorType.RESPONSE_ERROR),
+      );
+    }
+  }
+}
+
 /**
  * Root saga manages watcher lifecycle
  */
 export function* betViewSaga() {
-  yield all([takeLatest(actions.loadBet.type, getBet)]);
+  yield all([
+    takeLatest(actions.loadBet.type, getBet),
+    takeLatest(actions.loadBetBackground.type, getBetBackground),
+  ]);
 }

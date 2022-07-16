@@ -16,6 +16,7 @@ import { useBetViewSlice } from './slice';
 import { Alert, AlertTitle, Link } from '@mui/material';
 import { SingleBetView } from 'app/components/SingleBetView';
 import { MultiBetView } from 'app/components/MultiBetView';
+import { BetDiff } from './components/BetDiff';
 import { MultiBet, SingleBet } from 'types/Bet';
 import { BetViewErrorType } from './slice/types';
 
@@ -84,15 +85,23 @@ export function BetView(props: Props) {
   } else if (!loading && bet) {
     content =
       betMetaType === 'single' ? (
-        <SingleBetView
-          bet={bet as SingleBet}
-          nextRefreshTs={Number(nextRefreshTs)}
-        />
+        <>
+          <BetDiff />
+          <br />
+          <SingleBetView
+            bet={bet as SingleBet}
+            nextRefreshTs={Number(nextRefreshTs)}
+          />
+        </>
       ) : (
-        <MultiBetView
-          bet={bet as MultiBet}
-          nextRefreshTs={Number(nextRefreshTs)}
-        />
+        <>
+          <BetDiff />
+          <br />
+          <MultiBetView
+            bet={bet as MultiBet}
+            nextRefreshTs={Number(nextRefreshTs)}
+          />
+        </>
       );
   }
 

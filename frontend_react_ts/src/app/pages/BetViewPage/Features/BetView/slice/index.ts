@@ -12,6 +12,9 @@ export const initialState: BetViewState = {
   bet: null,
   betMetaType: null,
   nextRefreshTs: null,
+  loadingBackground: false,
+  betBackground: null,
+  errorBackground: null,
 };
 
 const slice = createSlice({
@@ -28,6 +31,7 @@ const slice = createSlice({
     betLoaded(state, action: PayloadAction<BetViewResponse>) {
       const resp = action.payload;
       state.bet = resp.data;
+      state.betBackground = resp.data;
       state.betMetaType = resp.result_type;
       state.nextRefreshTs = resp.next_refresh_ts;
       state.loading = false;
@@ -35,6 +39,23 @@ const slice = createSlice({
     betLoadingError(state, action: PayloadAction<BetViewErrorType>) {
       state.error = action.payload;
       state.loading = false;
+    },
+    loadBetBackground(state) {
+      state.loadingBackground = true;
+      state.errorBackground = null;
+    },
+    betLoadedBackground(state, action: PayloadAction<BetViewResponse>) {
+      const resp = action.payload;
+      state.betBackground = resp.data;
+      state.nextRefreshTs = resp.next_refresh_ts;
+      state.loadingBackground = false;
+    },
+    betLoadingErrorBackground(state, action: PayloadAction<BetViewErrorType>) {
+      state.errorBackground = action.payload;
+      state.loadingBackground = false;
+    },
+    swapToForeground(state) {
+      state.bet = state.betBackground;
     },
   },
 });

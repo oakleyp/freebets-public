@@ -228,19 +228,6 @@ export function SingleBetView({ bet, nextRefreshTs, dense = false }: Props) {
                     </TableCell>
                     <TableCell align="right">{bet.bet_strategy_type}</TableCell>
                   </TableRow>
-                  <TableRow
-                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      Next Refresh
-                    </TableCell>
-                    <TableCell align="right">
-                      <CountdownTimer
-                        timeMillis={nextRefreshTs}
-                        endText="OFF"
-                      />
-                    </TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>

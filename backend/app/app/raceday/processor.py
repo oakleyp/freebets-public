@@ -105,7 +105,7 @@ class DefaultNextCheckGen(NextCheckGen):
         ):
             return time_context.lookahead_end
         # If within 5 minutes, refresh every 1 minute
-        elif watcher.post_time - time_context.now < timedelta(minutes=5):
+        elif watcher.post_time - time_context.now <= timedelta(minutes=5):
             return time_context.now + timedelta(minutes=1)
         # Otherwise, nct should be the refresh_interval + current time
         else:
@@ -257,6 +257,7 @@ class RaceDayProcessor:
 
             try:
                 if race.current_race:
+                    logger.debug("Refreshing pool totals for %s", race)
                     self._ingest_race_pool_totals(race)
                     use_pool_totals = True
             except LiveRacingCrawlerException:
@@ -380,13 +381,13 @@ class RaceDayProcessor:
 
                 diff: timedelta = (race.post_time - time_context.now)
 
-                if diff < timedelta(minutes=5) and not (
+                if diff <= timedelta(minutes=5) and not (
                     watcher.next_check_time <= time_context.now
                 ):
                     logger.error(
                         "Should refresh %s - (%s to posttime) but nct is %s",
-                        diff,
                         race,
+                        diff,
                         watcher.next_check_time,
                     )
 
@@ -414,7 +415,7 @@ class RaceDayProcessor:
         bets = bet_gen.all_bets()
         result_bets: List[Bet] = []
 
-        logger.info("Generated bets %d for race %s", len(bets), race)
+        logger.debug("Generated %d bets for race %s", len(bets), race)
 
         for (i, bet) in enumerate(bets):
             if i >= self.max_bets_per_race:
@@ -488,7 +489,7 @@ class RaceDayProcessor:
         ncts = [v.next_check_time for (k, v) in self.watching_races.items()]
 
         if len(ncts) < 1:
-            max_dt = datetime.max
+            max_dt = datetime.now(timezone.utc) + timedelta(years=1)
             return max_dt.astimezone(tz=timezone.utc)
 
         return min(ncts)
@@ -524,7 +525,7 @@ class RaceDayProcessor:
             logger.error("Called _update_watcher() when none exists for race %s", race)
             return None
 
-        if watcher.next_check_time <= time_context.now and refresh_nct:
+        if refresh_nct and watcher.next_check_time <= time_context.now:
             nct = self.next_check_gen.get_next_check_time(watcher, time_context)
         else:
             nct = watcher.next_check_time

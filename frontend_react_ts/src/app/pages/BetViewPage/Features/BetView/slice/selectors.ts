@@ -34,3 +34,18 @@ export const selectNextRefreshTs = createSelector(
   [selectDomain],
   betViewState => betViewState.nextRefreshTs,
 );
+
+export const selectBetBackground = createSelector(
+  [selectDomain],
+  betViewState => betViewState.betBackground,
+);
+
+export const selectLoadingBackground = createSelector(
+  [selectDomain],
+  betViewState => betViewState.loadingBackground,
+);
+
+export const selectErrorBackground = createSelector(
+  [selectDomain],
+  betViewState => betViewState.errorBackground,
+);
