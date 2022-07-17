@@ -5,7 +5,7 @@ from time import sleep
 from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, make_transient
 
 from app.core.config import settings
 from app.lib.clients.demo_live_racing_client import DemoLiveRacingClient
@@ -105,7 +105,7 @@ class DefaultNextCheckGen(NextCheckGen):
         ):
             return time_context.lookahead_end
         # If within 5 minutes, refresh every 1 minute
-        elif watcher.post_time - time_context.now <= timedelta(minutes=5):
+        elif watcher.post_time - (time_context.now + time_context.refresh_interval) <= timedelta(minutes=5):
             return time_context.now + timedelta(minutes=1)
         # Otherwise, nct should be the refresh_interval + current time
         else:
@@ -411,6 +411,13 @@ class RaceDayProcessor:
             bet_hash = bet.md5_hash().hexdigest()
             bet_map[bet_hash] = bet
 
+            if bet.parent:
+                parent_hash = bet.parent.md5_hash().hexdigest()
+                bet_map[parent_hash] = bet.parent
+
+            for sub_bet in bet.sub_bets:
+                bet_map[sub_bet.md5_hash().hexdigest()] = sub_bet
+
         bet_gen = BetGen(race=race, use_pool_totals=use_pool_totals)
         bets = bet_gen.all_bets()
         result_bets: List[Bet] = []
@@ -431,7 +438,7 @@ class RaceDayProcessor:
 
             result_bets.append(bet_db)
 
-        logger.debug("Saving generated bets")
+        logger.debug("Saving generated bets %s", result_bets)
 
         new_bets: List[Bet] = []
         updates_seen = set()
@@ -440,6 +447,7 @@ class RaceDayProcessor:
             bet_hash = bet.md5_hash().hexdigest()
 
             if bet_hash in bet_map:
+                make_transient(bet)
                 bet_map[bet_hash].update_shallow(bet)
                 updates_seen.add(bet_hash)
             else:
@@ -449,6 +457,8 @@ class RaceDayProcessor:
 
         for hash in hashes_to_delete:
             self.db.delete(bet_map[hash])
+
+        self.db.commit()
 
         if len(new_bets):
             self.db.add_all(new_bets)
@@ -489,7 +499,8 @@ class RaceDayProcessor:
         ncts = [v.next_check_time for (k, v) in self.watching_races.items()]
 
         if len(ncts) < 1:
-            max_dt = datetime.now(timezone.utc) + timedelta(years=1)
+            # TODO: improve on punting problems for 500 weeks
+            max_dt = datetime.now(timezone.utc) + timedelta(weeks=500)
             return max_dt.astimezone(tz=timezone.utc)
 
         return min(ncts)

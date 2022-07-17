@@ -2,6 +2,7 @@ import { createSelector } from '@reduxjs/toolkit';
 
 import { RootState } from 'types';
 import { initialState } from '.';
+import { getBetDiff } from './types';
 
 const selectDomain = (state: RootState) => state.betView || initialState;
 
@@ -48,4 +49,15 @@ export const selectLoadingBackground = createSelector(
 export const selectErrorBackground = createSelector(
   [selectDomain],
   betViewState => betViewState.errorBackground,
+);
+
+export const selectBetDiff = createSelector(
+  [selectBet, selectBetBackground],
+  (bet, betBackground) => {
+    if (!bet || !betBackground) {
+      return;
+    }
+
+    return getBetDiff(bet, betBackground);
+  },
 );

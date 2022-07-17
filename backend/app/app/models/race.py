@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List
 
 from sqlalchemy import BigInteger, Boolean, Column, Date, Float, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 from app.db.base_class import Base
 from app.db.custom_types import TZDateTime
@@ -88,9 +88,9 @@ class Race(Base):
     entries = relationship(
         "RaceEntry", back_populates="race", cascade="all, delete-orphan", uselist=True
     )
-    bets = relationship(
-        "Bet", back_populates="race", cascade="all, delete-orphan", uselist=True
-    )
+    # bets = relationship(
+    #     "Bet", backref=backref("race"), cascade="all, delete-orphan", uselist=True
+    # )
 
     def active_entries(self) -> List["RaceEntry"]:
         return [entry for entry in self.entries if not entry.scratched]

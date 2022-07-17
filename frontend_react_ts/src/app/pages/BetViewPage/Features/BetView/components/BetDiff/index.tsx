@@ -16,25 +16,8 @@ import { useBetViewSlice } from '../../slice';
 import { Alert, AlertTitle, Link, AlertColor, IconButton } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { MultiBet, narrowBetType, SingleBet } from 'types/Bet';
-import { BetViewErrorType } from '../../slice/types';
+import { BetDiffDescriptor, BetViewErrorType } from '../../slice/types';
 import { CountdownTimer } from 'app/components/CountdownTimer';
-
-interface BetDiffDescriptor {
-  minRewardDiff: number;
-  avgRewardDiff: number;
-  maxRewardDiff: number;
-}
-
-function getBetDiff(
-  base: SingleBet | MultiBet,
-  current: SingleBet | MultiBet,
-): BetDiffDescriptor {
-  return {
-    minRewardDiff: current.min_reward - base.min_reward,
-    avgRewardDiff: current.avg_reward - base.avg_reward,
-    maxRewardDiff: current.max_reward - base.max_reward,
-  };
-}
 
 interface BetDiffMessage {
   title: string;
@@ -64,10 +47,13 @@ function getBetDiffMessages(descriptor: BetDiffDescriptor): BetDiffMessage {
   };
 }
 
-interface Props {}
+interface Props {
+  betDiff: BetDiffDescriptor;
+}
 
 export function BetDiff(props: Props) {
   const { actions } = useBetViewSlice();
+  const { betDiff } = props;
 
   const bet = useSelector(selectBet);
   const betBackground = useSelector(selectBetBackground);
@@ -99,9 +85,6 @@ export function BetDiff(props: Props) {
     );
   }
 
-  const betDiff = getBetDiff(bet, betBackground);
-  const betDiffMessages = getBetDiffMessages(betDiff);
-
   const refreshIcon = (
     <IconButton
       color="inherit"
@@ -114,6 +97,8 @@ export function BetDiff(props: Props) {
       <RefreshIcon fontSize="small" />
     </IconButton>
   );
+
+  const betDiffMessages = getBetDiffMessages(betDiff);
 
   return (
     <Alert severity={betDiffMessages.severity}>

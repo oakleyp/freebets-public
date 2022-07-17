@@ -14,18 +14,53 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
+import Tooltip from '@mui/material/Tooltip';
 import { EntriesTable } from 'app/components/EntriesTable';
 import { CountdownTimer } from '../CountdownTimer';
 import { getEffectiveTS } from 'utils/bets';
+import { BetDiffDescriptor } from 'app/pages/BetViewPage/Features/BetView/slice/types';
 
 interface Props {
   bet: SingleBet;
   nextRefreshTs: number;
   dense?: boolean | null;
+  betDiff: BetDiffDescriptor;
 }
 
-export function SingleBetView({ bet, nextRefreshTs, dense = false }: Props) {
+function createDiffView(
+  bet: SingleBet,
+  betDiff: BetDiffDescriptor,
+  diffField: keyof BetDiffDescriptor,
+) {
+  const bddMap = {
+    avgRewardDiff: 'avg_reward',
+    minRewardDiff: 'min_reward',
+    maxRewardDiff: 'max_reward',
+  };
+
+  const ogval = bet[bddMap[diffField]];
+  const diff = betDiff[diffField];
+
+  if (diff === 0) {
+    return `$${ogval.toFixed(2)}`;
+  }
+
+  const color = diff > 0 ? 'success' : 'error';
+  const changeText = diff > 0 ? 'Increased' : 'Decreased';
+
+  return (
+    <Tooltip title={`${changeText} from: ${bet[bddMap[diffField]].toFixed(2)}`}>
+      <Typography color={color}>${`${(ogval + diff).toFixed(2)}`}</Typography>
+    </Tooltip>
+  );
+}
+
+export function SingleBetView({
+  bet,
+  nextRefreshTs,
+  betDiff,
+  dense = false,
+}: Props) {
   return (
     <>
       <Grid container spacing={2}>
@@ -181,7 +216,7 @@ export function SingleBetView({ bet, nextRefreshTs, dense = false }: Props) {
                       Min Reward
                     </TableCell>
                     <TableCell align="right">
-                      ${bet.min_reward.toFixed(2)}
+                      {createDiffView(bet, betDiff, 'minRewardDiff')}
                     </TableCell>
                   </TableRow>
                   <TableRow
@@ -191,7 +226,7 @@ export function SingleBetView({ bet, nextRefreshTs, dense = false }: Props) {
                       Avg. Reward
                     </TableCell>
                     <TableCell align="right">
-                      ${bet.avg_reward.toFixed(2)}
+                      {createDiffView(bet, betDiff, 'avgRewardDiff')}
                     </TableCell>
                   </TableRow>
                   <TableRow
@@ -201,7 +236,7 @@ export function SingleBetView({ bet, nextRefreshTs, dense = false }: Props) {
                       Max Reward
                     </TableCell>
                     <TableCell align="right">
-                      ${bet.max_reward.toFixed(2)}
+                      {createDiffView(bet, betDiff, 'maxRewardDiff')}
                     </TableCell>
                   </TableRow>
                   <TableRow

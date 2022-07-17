@@ -74,7 +74,13 @@ class DemoLiveRacingClient(AbstractLiveRacingClient):
     ) -> List[StarterDetails]:
 
         try:
-            return self.race_state[track_code][str(race_no)].starters
+            starters = self.race_state[track_code][str(race_no)].starters
+
+            # slightly shift odds
+            for starter in starters:
+                    starter.liveOdds = f"{starter.liveOddsNumeric() + random.uniform(-0.1, 0.1)}/1"
+
+            return starters
         except KeyError as e:
             raise DemoLiveRacingClientException(
                 f"Failed to pull race entries for track {track_code} - race {race_no} - type {type}: {e}"

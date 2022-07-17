@@ -7,6 +7,7 @@ import {
   selectError,
   selectLoading,
   selectNextRefreshTs,
+  selectBetDiff,
 } from './slice/selectors';
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -34,6 +35,7 @@ export function BetView(props: Props) {
   const betId = useSelector(selectBetId);
   const betMetaType = useSelector(selectBetMetaType);
   const nextRefreshTs = useSelector(selectNextRefreshTs);
+  const betDiff = useSelector(selectBetDiff);
 
   const dispatch = useDispatch();
 
@@ -82,24 +84,26 @@ export function BetView(props: Props) {
         {getErrorMessage(error)}
       </Alert>
     );
-  } else if (!loading && bet) {
+  } else if (!loading && bet && betDiff) {
     content =
       betMetaType === 'single' ? (
         <>
-          <BetDiff />
+          <BetDiff betDiff={betDiff} />
           <br />
           <SingleBetView
             bet={bet as SingleBet}
             nextRefreshTs={Number(nextRefreshTs)}
+            betDiff={betDiff}
           />
         </>
       ) : (
         <>
-          <BetDiff />
+          <BetDiff betDiff={betDiff} />
           <br />
           <MultiBetView
             bet={bet as MultiBet}
             nextRefreshTs={Number(nextRefreshTs)}
+            betDiff={betDiff}
           />
         </>
       );

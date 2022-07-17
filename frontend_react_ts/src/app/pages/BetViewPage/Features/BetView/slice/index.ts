@@ -3,7 +3,7 @@ import { BetViewResponse } from 'types/Bet';
 import { createSlice } from 'utils/@reduxjs/toolkit';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 import { betViewSaga } from './saga';
-import { BetViewState, BetViewErrorType } from './types';
+import { BetViewState, BetViewErrorType, getBetDiff } from './types';
 
 export const initialState: BetViewState = {
   betId: null,
@@ -46,6 +46,7 @@ const slice = createSlice({
     },
     betLoadedBackground(state, action: PayloadAction<BetViewResponse>) {
       const resp = action.payload;
+      // state.bet = resp.data;
       state.betBackground = resp.data;
       state.nextRefreshTs = resp.next_refresh_ts;
       state.loadingBackground = false;

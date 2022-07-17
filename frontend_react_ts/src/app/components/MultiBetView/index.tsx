@@ -23,6 +23,7 @@ import MuiAccordionSummary, {
   AccordionSummaryProps,
 } from '@mui/material/AccordionSummary';
 import MuiAccordionDetails from '@mui/material/AccordionDetails';
+import { BetDiffDescriptor } from 'app/pages/BetViewPage/Features/BetView/slice/types';
 
 const Accordion = styled((props: AccordionProps) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -73,9 +74,10 @@ function getBetShorthand(bet: SingleBet) {
 interface Props {
   bet: MultiBet;
   nextRefreshTs: number;
+  betDiff: BetDiffDescriptor;
 }
 
-export function MultiBetView({ bet, nextRefreshTs }: Props) {
+export function MultiBetView({ bet, nextRefreshTs, betDiff }: Props) {
   const [expanded, setExpanded] = React.useState<string | false>(false);
 
   const handleChange =
@@ -98,7 +100,12 @@ export function MultiBetView({ bet, nextRefreshTs }: Props) {
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <SingleBetView dense bet={bet} nextRefreshTs={nextRefreshTs} />
+              <SingleBetView
+                dense
+                bet={bet}
+                nextRefreshTs={nextRefreshTs}
+                betDiff={betDiff}
+              />
             </AccordionDetails>
           </Accordion>
         ))}

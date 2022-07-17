@@ -71,7 +71,7 @@ class BetGen:
             strategy=self.strategy,
         )
 
-        if len(ps_arb_bet.bets) > 0:
+        if len(ps_arb_bet.bets) > 1:
             result.append(ps_arb_bet)
 
         # Generate individual place/show bets, and append if expected value > limit
