@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -199,3 +199,18 @@ class RaceWithStarterDetails(RaceDetails):
 
 class TrackWithRaceAndStarterDetails(TrackWithRaceDetailsBase):
     races: List[RaceWithStarterDetails]
+
+
+class EntryPoolTotals(BaseModel):
+    program_no: str
+    win_total: float
+    place_total: float
+    show_total: float
+
+
+class RacePoolTotals(BaseModel):
+    win_total: float
+    place_total: float
+    show_total: float
+
+    entries_to_pools_map: Dict[str, EntryPoolTotals]

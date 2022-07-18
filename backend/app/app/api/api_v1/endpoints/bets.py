@@ -1,13 +1,16 @@
 import logging
-from typing import Any, List
+from datetime import datetime, timedelta, timezone
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import schemas
 from app.api import deps
+from app.core.config import settings
 from app.models.bet import Bet
 from app.models.race import Race
+from app.models.raceday_refresh_log import RaceDayRefreshLog
 from app.raceday.bet_strategy.bet_strategies import BetStrategyType, BetType
 from app.schemas.bet_result import (
     BetGetResponse,
@@ -24,11 +27,55 @@ router = APIRouter()
 # DEFAULT_TRACK_CODES = ["kee", "cd", "mrn"]
 DEFAULT_TRACK_CODES = []
 DEFAULT_BET_STRAT_TYPES = list(
-    map(str, [BetStrategyType.BOOK_ALL_WIN_ARB, BetStrategyType.BOOK_BOX_WIN_ARB],)
+    map(
+        str,
+        [
+            BetStrategyType.BOOK_ALL_WIN_ARB,
+            BetStrategyType.BOOK_BOX_WIN_ARB,
+            BetStrategyType.BOOK_DR_Z_PLACE_SHOW_ARB,
+            BetStrategyType.BOOK_DR_Z_PLACE_BET,
+            BetStrategyType.BOOK_DR_Z_SHOW_BET,
+        ],
+    )
 )
 DEFAULT_BET_TYPES = list(
-    map(str, [BetType.ALL_WIN_ARB, BetType.BOX_WIN_ARB, BetType.WIN_BET])
+    map(
+        str,
+        [
+            BetType.ALL_WIN_ARB,
+            BetType.BOX_WIN_ARB,
+            BetType.WIN_BET,
+            BetType.PLACE_BET,
+            BetType.SHOW_BET,
+            BetType.PLACE_SHOW_ARB,
+        ],
+    )
 )
+
+
+def get_next_refresh_ts(db: Session) -> int:
+    # Get the time to next refresh from the latest processor refresh log.
+    # It may be in the past depending on when the processor last ran;
+    # use the max sleep time in that case.
+    latest_refresh_log: Optional[RaceDayRefreshLog] = db.query(
+        RaceDayRefreshLog
+    ).order_by(RaceDayRefreshLog.next_check_time.desc()).first()
+
+    now = datetime.now(timezone.utc)
+
+    print(settings.EXPECTED_PROCESS_TIME_SECS)
+
+    if latest_refresh_log and latest_refresh_log.next_check_time >= now:
+        nct: datetime = latest_refresh_log.next_check_time
+        next_refresh_ts = int(nct.timestamp() * 1000)
+        # Add some time to account for the time to run the job
+        next_refresh_ts += settings.EXPECTED_PROCESS_TIME_SECS * 1000
+    else:
+        next_refresh_ts = int(
+            (now + timedelta(seconds=settings.MAX_SLEEP_TIME_SECS)).timestamp() * 1000
+        )
+
+    return next_refresh_ts
 
 
 @router.get("/", response_model=schemas.BetsQueryResponse)
@@ -44,7 +91,7 @@ def read_bets(
     """
     Retrieve items.
     """
-    all_bets_q = db.query(Bet)
+    all_bets_q = db.query(Bet).filter(Bet.parent_id == None)
 
     if len(bet_types) > 0:
         all_bets_q = all_bets_q.filter(Bet.bet_type.in_(bet_types))
@@ -69,19 +116,27 @@ def read_bets(
         if i > limit - 1:
             break
 
-        if len(bet.sub_bets) < 1 and bet.parent_id is None:
+        if bet.race:
             single_bets.append(bet_conv.create_single_bet_result(bet))
         else:
             multi_bets.append(bet_conv.create_multi_bet_result(bet))
 
-    result_track_codes = list(set([bet.race.track_code for bet in all_bets]))
+    result_track_codes = list(
+        set([bet.race.track_code for bet in all_bets if bet.race])
+    )
     result_bet_strat_types = list(set([bet.bet_strategy_type for bet in all_bets]))
     result_bet_types = list(set([bet.bet_type for bet in all_bets]))
 
     # TODO: Cache this (or make static)
-    all_track_codes = [race.track_code for race in db.query(Race).distinct(Race.track_code).all()]
-    all_bet_strat_types = [str(BetStrategyType[bet_strat_type.name]) for bet_strat_type in BetStrategyType]
+    all_track_codes = [
+        race.track_code for race in db.query(Race).distinct(Race.track_code).all()
+    ]
+    all_bet_strat_types = [
+        str(BetStrategyType[bet_strat_type.name]) for bet_strat_type in BetStrategyType
+    ]
     all_bet_types = [str(BetType[bet_type.name]) for bet_type in BetType]
+
+    next_refresh_ts = get_next_refresh_ts(db)
 
     return BetsQueryResponse(
         single_bets=single_bets,
@@ -94,6 +149,7 @@ def read_bets(
         all_bet_types=all_bet_types,
         limit=limit,
         skip=skip,
+        next_refresh_ts=next_refresh_ts,
     )
 
 
@@ -109,11 +165,17 @@ def read_bet(*, db: Session = Depends(deps.get_db), id: int,) -> Any:
 
     bet_conv = BetResultConverter()
 
+    next_refresh_ts = get_next_refresh_ts(db)
+
     if len(bet.sub_bets) < 1:
         return BetGetResponse(
-            data=bet_conv.create_single_bet_result(bet), result_type="single"
+            data=bet_conv.create_single_bet_result(bet),
+            result_type="single",
+            next_refresh_ts=next_refresh_ts,
         )
     else:
         return BetGetResponse(
-            data=bet_conv.create_multi_bet_result(bet), result_type="multi",
+            data=bet_conv.create_multi_bet_result(bet),
+            result_type="multi",
+            next_refresh_ts=next_refresh_ts,
         )

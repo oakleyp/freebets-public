@@ -80,6 +80,7 @@ class LiveRaceExtendedCanonical:
             track_code=track.brisCode,
             track_country=track.hostCountry,
             race_type=track.type,
+            current_race=race.currentRace,
         )
 
         for entry in race.starters:
@@ -115,6 +116,7 @@ class LiveRaceBasicCanonical:
             track_code=track.brisCode,
             track_country=track.hostCountry,
             race_type=track.type,
+            current_race=race.currentRace,
         )
 
 

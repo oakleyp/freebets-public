@@ -6,6 +6,9 @@ export type Race = {
   status: string;
   post_time: Date;
   post_time_stamp: number;
+  win_pool_total: number;
+  place_pool_total: number;
+  show_pool_total: number;
 };
 
 export type BaseBet = {
@@ -32,6 +35,21 @@ export type MultiBet = BaseBet & {
   sub_bets: SingleBet[];
 };
 
+export function narrowBetType(bet: MultiBet | SingleBet, type: string) {
+  const typeMap = {
+    single: () => bet as SingleBet,
+    multi: () => bet as MultiBet,
+  };
+
+  const converter = typeMap[type];
+
+  if (typeof converter !== 'function') {
+    throw new TypeError(`Unknown bet type ${type}`);
+  }
+
+  return converter();
+}
+
 export interface BetsListResponse {
   single_bets: SingleBet[];
   multi_bets: MultiBet[];
@@ -43,11 +61,13 @@ export interface BetsListResponse {
   all_track_codes: string[];
   all_bet_strat_types: BetStratType[];
   all_bet_types: string[];
+  next_refresh_ts: number;
 }
 
 export interface BetViewResponse {
   data: MultiBet | SingleBet;
   result_type: string;
+  next_refresh_ts: number;
 }
 
 export const ALL_TRACKS = [

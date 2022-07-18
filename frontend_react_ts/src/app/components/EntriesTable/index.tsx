@@ -1,6 +1,4 @@
 import * as React from 'react';
-import styled from 'styled-components/macro';
-import { SingleBet } from 'types/Bet';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -9,7 +7,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
 import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import TablePagination from '@mui/material/TablePagination';
@@ -17,12 +14,10 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Toolbar from '@mui/material/Toolbar';
 import Checkbox from '@mui/material/Checkbox';
 import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch from '@mui/material/Switch';
-import DeleteIcon from '@mui/icons-material/Delete';
-import FilterListIcon from '@mui/icons-material/FilterList';
+import Collapse from '@mui/material/Collapse';
 import { visuallyHidden } from '@mui/utils';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 interface Data {
   program_no: number;
@@ -82,7 +77,7 @@ interface HeadCell {
 const headCells: readonly HeadCell[] = [
   {
     id: 'program_no',
-    numeric: false,
+    numeric: true,
     disablePadding: true,
     label: 'Program No.',
   },
@@ -141,15 +136,12 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             indeterminate={numSelected > 0 && numSelected < rowCount}
             checked={rowCount > 0 && numSelected === rowCount}
             onChange={onSelectAllClick}
-            inputProps={{
-              'aria-label': 'select all desserts',
-            }}
           />
         </TableCell>
         {headCells.map(headCell => (
           <TableCell
             key={headCell.id}
-            align={headCell.numeric ? 'right' : 'left'}
+            align="right"
             padding={headCell.disablePadding ? 'none' : 'normal'}
             sortDirection={orderBy === headCell.id ? order : false}
           >
@@ -175,10 +167,15 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 interface EnhancedTableToolbarProps {
   numSelected: number;
   title: React.ReactNode;
+  expanded?: boolean | null;
+  onExpandClick?: Function | null;
 }
 
 const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
-  const { numSelected, title } = props;
+  const { numSelected, title, expanded } = props;
+
+  const onExpandClick =
+    typeof props.onExpandClick === 'function' ? props.onExpandClick : () => {};
 
   return (
     <Toolbar
@@ -217,6 +214,9 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
           {title}
         </Typography>
       )}
+      <IconButton onClick={() => onExpandClick()}>
+        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+      </IconButton>
       {/* {numSelected > 0 ? (
         <Tooltip title="Delete">
           <IconButton>
@@ -237,15 +237,23 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
 interface EntriesTableProps {
   title: JSX.Element | string;
   rows: any[];
+  defaultDense?: boolean | null;
+  defaultExpanded?: boolean | null;
 }
 
-export function EntriesTable({ rows, title }: EntriesTableProps) {
+export function EntriesTable({
+  rows,
+  title,
+  defaultDense = false,
+  defaultExpanded = true,
+}: EntriesTableProps) {
   const [order, setOrder] = React.useState<Order>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof Data>('ai_predicted_odds');
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
+  const [dense, setDense] = React.useState(defaultDense);
   const [rowsPerPage, setRowsPerPage] = React.useState(25);
+  const [expanded, setExpanded] = React.useState(defaultExpanded);
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
@@ -296,9 +304,9 @@ export function EntriesTable({ rows, title }: EntriesTableProps) {
     setPage(0);
   };
 
-  const handleChangeDense = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDense(event.target.checked);
-  };
+  // const handleChangeDense = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   setDense(event.target.checked);
+  // };
 
   const isSelected = (name: string) => selected.indexOf(name) !== -1;
 
@@ -309,86 +317,98 @@ export function EntriesTable({ rows, title }: EntriesTableProps) {
   return (
     <Box sx={{ width: '100%' }}>
       <Paper sx={{ width: '100%', mb: 2 }}>
-        <EnhancedTableToolbar numSelected={selected.length} title={title} />
-        <TableContainer>
-          <Table
-            sx={{ minWidth: 750 }}
-            aria-labelledby="tableTitle"
-            size={dense ? 'small' : 'medium'}
-          >
-            <EnhancedTableHead
-              numSelected={selected.length}
-              order={order}
-              orderBy={orderBy}
-              onSelectAllClick={handleSelectAllClick}
-              onRequestSort={handleRequestSort}
-              rowCount={rows.length}
-            />
-            <TableBody>
-              {/* if you don't need to support IE11, you can replace the `stableSort` call with:
-                rows.slice().sort(getComparator(order, orderBy)) */}
-              {stableSort(rows, getComparator(order, orderBy))
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => {
-                  const isItemSelected = isSelected(row.name as string);
-                  const labelId = `enhanced-table-checkbox-${index}`;
-
-                  return (
-                    <TableRow
-                      hover
-                      onClick={event => handleClick(event, row.name as string)}
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      key={row.name}
-                      selected={isItemSelected}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          color="primary"
-                          checked={isItemSelected}
-                          inputProps={{
-                            'aria-labelledby': labelId,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell
-                        component="th"
-                        id={labelId}
-                        scope="row"
-                        padding="none"
-                      >
-                        {row.program_no}
-                      </TableCell>
-                      <TableCell align="right">{row.name}</TableCell>
-                      <TableCell align="right">{row.odds}</TableCell>
-                      <TableCell align="right">
-                        {row.ai_predicted_odds}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              {emptyRows > 0 && (
-                <TableRow
-                  style={{
-                    height: (dense ? 33 : 53) * emptyRows,
-                  }}
-                >
-                  <TableCell colSpan={6} />
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
+        <EnhancedTableToolbar
+          numSelected={selected.length}
+          title={title}
+          expanded={expanded}
+          onExpandClick={() => setExpanded(!expanded)}
         />
+        <Collapse in={expanded || false}>
+          <TableContainer>
+            <Table
+              sx={{ width: '100%' }}
+              aria-labelledby="tableTitle"
+              size={dense ? 'small' : 'medium'}
+            >
+              <EnhancedTableHead
+                numSelected={selected.length}
+                order={order}
+                orderBy={orderBy}
+                onSelectAllClick={handleSelectAllClick}
+                onRequestSort={handleRequestSort}
+                rowCount={rows.length}
+              />
+              <TableBody>
+                {/* if you don't need to support IE11, you can replace the `stableSort` call with:
+                rows.slice().sort(getComparator(order, orderBy)) */}
+                {stableSort(rows, getComparator(order, orderBy))
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((row, index) => {
+                    const isItemSelected = isSelected(row.name as string);
+                    const labelId = `enhanced-table-checkbox-${index}`;
+
+                    return (
+                      <TableRow
+                        hover
+                        onClick={event =>
+                          handleClick(event, row.name as string)
+                        }
+                        role="checkbox"
+                        aria-checked={isItemSelected}
+                        tabIndex={-1}
+                        key={row.name}
+                        selected={isItemSelected}
+                      >
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            color="primary"
+                            checked={isItemSelected}
+                            inputProps={{
+                              'aria-labelledby': labelId,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell
+                          component="th"
+                          id={labelId}
+                          scope="row"
+                          padding="none"
+                        >
+                          {Number(row.program_no)}
+                        </TableCell>
+                        <TableCell align="right">{row.name}</TableCell>
+                        <TableCell align="right">
+                          {typeof row.odds === 'number' && row.odds.toFixed(2)}
+                        </TableCell>
+                        <TableCell align="right">
+                          {typeof row.ai_predicted_odds === 'number' &&
+                            row.ai_predicted_odds.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                {emptyRows > 0 && (
+                  <TableRow
+                    style={{
+                      height: (dense ? 33 : 53) * emptyRows,
+                    }}
+                  >
+                    <TableCell colSpan={6} />
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={rows.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </Collapse>
       </Paper>
       {/* <FormControlLabel
           control={<Switch checked={dense} onChange={handleChangeDense} />}

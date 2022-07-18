@@ -1,4 +1,12 @@
-import React, { useState, useEffect, useRef, MutableRefObject } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  MutableRefObject,
+  createRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   selectBets,
@@ -6,7 +14,11 @@ import {
   selectLoading,
   selectCurrentBetSearchParams,
   selectAvailableFilterValues,
+  selectNextRefreshTs,
+  selectCountdownRefreshEnabled,
 } from './slice/selectors';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 
 import { styled } from '@mui/material/styles';
 import List from '@mui/material/List';
@@ -14,7 +26,12 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import MenuIcon from '@mui/icons-material/Menu';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import PauseIcon from '@mui/icons-material/Pause';
+import ResumeIcon from '@mui/icons-material/PlayArrow';
 import Box from '@mui/material/Box';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
 import headerImage from '../../assets/wow.gif';
 import LinearProgress, {
   linearProgressClasses,
@@ -28,6 +45,10 @@ import Toolbar from '@mui/material/Toolbar';
 import { BetsErrorType } from './slice/types';
 import { BetListItem } from './components/BetListItem';
 import { getEffectiveTS } from 'utils/bets';
+import { CountdownTimer } from 'app/components/CountdownTimer';
+import { TimeseriesChart } from './components/TimeseriesChart';
+
+dayjs.extend(utc);
 
 export function BetIndex() {
   const { actions } = useBetIndexSlice();
@@ -37,6 +58,15 @@ export function BetIndex() {
   const error = useSelector(selectError);
   const currentBetSearchParams = useSelector(selectCurrentBetSearchParams);
   const availableFilterValues = useSelector(selectAvailableFilterValues);
+  const nextRefreshTs = useSelector(selectNextRefreshTs);
+  const countdownRefreshEnabled = useSelector(selectCountdownRefreshEnabled);
+
+  const now = dayjs().utc();
+  const nowMillis = now.unix() * 1000;
+  const hasRefreshExpired = nextRefreshTs && nextRefreshTs > nowMillis;
+  const effectiveNextRefreshTs = hasRefreshExpired
+    ? nextRefreshTs
+    : now.add(10, 'minute').unix() * 1000;
 
   const dispatch = useDispatch();
 
@@ -105,13 +135,37 @@ export function BetIndex() {
     </Box>
   );
 
+  const allBets = useMemo(
+    () => [...bets.multiBets, ...bets.singleBets],
+    [bets],
+  );
+
+  const betItemRefMap = useRef({});
+
+  useEffect(() => {
+    const newmap = allBets.reduce(
+      (map, bet) => ({
+        ...map,
+        [bet.id]: betItemRefMap.current[bet.id],
+      }),
+      {},
+    );
+
+    betItemRefMap.current = newmap;
+  }, [allBets]);
+
   function listBets(bets: any) {
     return (
       <List>
-        {[...bets.multiBets, ...bets.singleBets]
-          .sort((a, b) => getEffectiveTS(b) - getEffectiveTS(a))
+        {[...allBets]
+          .sort((a, b) => getEffectiveTS(a) - getEffectiveTS(b))
           .map(bet => (
-            <BetListItem bet={bet} key={`betitem-${bet.id}`} />
+            <div
+              ref={el => (betItemRefMap.current[bet.id] = el)}
+              key={`betitem-${bet.id}`}
+            >
+              <BetListItem bet={bet} />
+            </div>
           ))}
       </List>
     );
@@ -143,66 +197,169 @@ export function BetIndex() {
     return fn();
   }
 
+  const handleBetSelection = useCallback(bet => {
+    betItemRefMap.current[bet.id].scrollIntoView({
+      behavior: 'smooth',
+    });
+  }, []);
+
   const drawerContainerRef: MutableRefObject<Element | null> = useRef(null);
 
   function betTable(bets: any) {
     return (
-      <Box
-        component={Paper}
-        ref={drawerContainerRef}
-        id="drawcontainer"
-        sx={{ position: 'relative' }}
-      >
-        <AppBar
-          open={filterOpen}
-          sx={{
-            position: 'static',
-          }}
+      <>
+        <Box sx={{ margin: '1em 0' }}>
+          {!loading &&
+            !error &&
+            (bets.singleBets.length || bets.multiBets.length || null) && (
+              <TimeseriesChart
+                bets={allBets}
+                onSelection={handleBetSelection}
+              />
+          )}
+          {loading && (
+            <>
+              <Skeleton
+                variant="rectangular"
+                width={'100%'}
+                height={20}
+                sx={{ marginBottom: '0.5em' }}
+              />
+              <Skeleton
+                variant="rectangular"
+                animation="wave"
+                width={'100%'}
+                height={100}
+              />
+            </>
+          )}
+        </Box>
+        <Box
+          component={Paper}
+          ref={drawerContainerRef}
+          id="drawcontainer"
+          sx={{ position: 'relative' }}
         >
-          <Toolbar sx={{ display: 'flex' }}>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              onClick={() => {
-                setFilterOpen(true);
-              }}
-              edge="start"
-              sx={{ mr: 2, ...(filterOpen && { display: 'none' }) }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" noWrap component="div">
-              Upcoming Plays
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <FilterDrawer
-          containerRef={drawerContainerRef}
-          width={drawerWidth}
-          open={filterOpen}
-          setOpen={setFilterOpen}
-          filterStates={{
-            betTypes: {
-              state: [betTypes, stateMutWrapper(setBetTypes)],
-              available: availableFilterValues.betTypes,
-            },
-            betStrategies: {
-              state: [betStrategies, stateMutWrapper(setBetStrategies)],
-              available: availableFilterValues.betStratTypes,
-            },
-            trackCodes: {
-              state: [trackCodes, stateMutWrapper(setTrackCodes)],
-              available: availableFilterValues.trackCodes,
-            },
-          }}
-          saveFilters={handleFilterSaveClick}
-          resetFilters={handleFilterResetClick}
-          filterStateDirty={filterStateDirty}
-        />
-        <Main open={filterOpen}>
-          <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
-        </Main>
-      </Box>
+          <AppBar
+            open={filterOpen}
+            sx={{
+              position: 'static',
+            }}
+          >
+            <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                onClick={() => {
+                  setFilterOpen(true);
+                }}
+                edge="start"
+                sx={{ mr: 2, ...(filterOpen && { display: 'none' }) }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" noWrap component="div" sx={{ flex: 1 }}>
+                Upcoming Plays
+              </Typography>
+              {!error && (
+                <Stack direction="row" spacing={0} sx={{ flex: 0 }}>
+                  <IconButton
+                    color="inherit"
+                    edge="end"
+                    sx={{ mr: 0 }}
+                    disabled={loading}
+                    onClick={() => dispatch(actions.loadBets())}
+                    size="small"
+                  >
+                    <RefreshIcon />
+                  </IconButton>
+                  <IconButton
+                    color="inherit"
+                    edge="end"
+                    sx={{ mr: 0 }}
+                    disabled={loading}
+                    onClick={() =>
+                      dispatch(
+                        actions.setCountdownRefreshEnabled(
+                          !countdownRefreshEnabled,
+                        ),
+                      )
+                    }
+                    size="small"
+                  >
+                    {countdownRefreshEnabled || loading ? (
+                      <PauseIcon />
+                    ) : (
+                      <ResumeIcon />
+                    )}
+                  </IconButton>
+                  <IconButton
+                    color="inherit"
+                    edge="end"
+                    sx={{ mr: 0 }}
+                    disabled={loading || !countdownRefreshEnabled}
+                    onClick={() => dispatch(actions.loadBets())}
+                    size="small"
+                  >
+                    {loading ? (
+                      <Skeleton width={80} />
+                    ) : (
+                      <CountdownTimer
+                        timeMillis={effectiveNextRefreshTs}
+                        onEnd={() =>
+                          !loading &&
+                          countdownRefreshEnabled &&
+                          dispatch(actions.loadBets())
+                        }
+                        endText="Refreshing..."
+                        running={!loading && countdownRefreshEnabled}
+                      />
+                    )}
+                  </IconButton>
+                </Stack>
+              )}
+              {error && (
+                <IconButton
+                  color="inherit"
+                  edge="end"
+                  sx={{ mr: 1, flex: 0 }}
+                  disabled={loading}
+                  onClick={() => dispatch(actions.loadBets())}
+                  size="small"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              )}
+            </Toolbar>
+          </AppBar>
+          <FilterDrawer
+            containerRef={drawerContainerRef}
+            width={drawerWidth}
+            open={filterOpen}
+            setOpen={setFilterOpen}
+            filterStates={{
+              betTypes: {
+                state: [betTypes, stateMutWrapper(setBetTypes)],
+                available: availableFilterValues.betTypes,
+              },
+              betStrategies: {
+                state: [betStrategies, stateMutWrapper(setBetStrategies)],
+                available: availableFilterValues.betStratTypes,
+              },
+              trackCodes: {
+                state: [trackCodes, stateMutWrapper(setTrackCodes)],
+                available: availableFilterValues.trackCodes,
+              },
+            }}
+            saveFilters={handleFilterSaveClick}
+            resetFilters={handleFilterResetClick}
+            filterStateDirty={filterStateDirty}
+          />
+          <Main open={filterOpen}>
+            <ListContainer>{loadErrorOr(() => listBets(bets))}</ListContainer>
+          </Main>
+        </Box>
+      </>
     );
   }
 
@@ -222,7 +379,7 @@ const ListHeader = styled(Typography)(({ theme, ...props }) => ({
   color: theme.palette.text.primary,
 }));
 
-const drawerWidth = '10vw';
+const drawerWidth = window.screen.width >= 1024 ? '18vw' : '80vw';
 
 const Main = styled('main', { shouldForwardProp: prop => prop !== 'open' })<{
   open?: boolean;

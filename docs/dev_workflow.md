@@ -1,4 +1,4 @@
-# FreeBets
+# Freebets
 
 # Base Project
 

@@ -16,7 +16,6 @@ export function BetIndexPage() {
         <Grid container spacing={3}>
           {/* Bet Index */}
           <Grid item xs={12}>
-            {/* <img src={headerImage} alt="" style={{ width: '100%' }} /> */}
             <BetIndex />
           </Grid>
         </Grid>

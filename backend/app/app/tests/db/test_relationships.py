@@ -7,10 +7,7 @@ from app.db.session import SessionLocal
 from app.models.bet import Bet
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
-from app.raceday.race_canonical import (
-    LiveRaceEntryCanonical,
-    LiveTrackBasicCanonical,
-)
+from app.raceday.race_canonical import LiveRaceEntryCanonical, LiveTrackBasicCanonical
 from app.tests.utils.race_data import create_starters_n, create_track_with_race_details
 from app.tests.utils.utils import random_lower_string
 
@@ -57,9 +54,7 @@ def test_bet_delete_no_delete_entries(clean_db: Session) -> None:
 
     for race in races:
         entry_data = create_starters_n(og_entries_len)
-        race_entries = [
-            LiveRaceEntryCanonical(entry).convert() for entry in entry_data
-        ]
+        race_entries = [LiveRaceEntryCanonical(entry).convert() for entry in entry_data]
 
         race.entries = race_entries
 
@@ -104,9 +99,7 @@ def test_delete_race_deletes_bets(clean_db: Session) -> None:
 
     for race in races:
         entry_data = create_starters_n(og_entries_len)
-        race_entries = [
-            LiveRaceEntryCanonical(entry).convert() for entry in entry_data
-        ]
+        race_entries = [LiveRaceEntryCanonical(entry).convert() for entry in entry_data]
 
         race.entries = race_entries
 
@@ -135,9 +128,7 @@ def test_delete_entry_no_delete_race(db: Session) -> None:
 
     for race in races:
         entry_data = create_starters_n(og_entries_len)
-        race_entries = [
-            LiveRaceEntryCanonical(entry).convert() for entry in entry_data
-        ]
+        race_entries = [LiveRaceEntryCanonical(entry).convert() for entry in entry_data]
 
         race.entries = race_entries
 

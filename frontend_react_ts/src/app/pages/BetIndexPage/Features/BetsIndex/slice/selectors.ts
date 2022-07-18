@@ -34,3 +34,13 @@ export const selectAvailableFilterValues = createSelector(
   [selectDomain],
   betIndexState => betIndexState.availableFilterValues,
 );
+
+export const selectNextRefreshTs = createSelector(
+  [selectDomain],
+  betIndexState => betIndexState.nextRefreshTs,
+);
+
+export const selectCountdownRefreshEnabled = createSelector(
+  [selectDomain],
+  betIndexState => betIndexState.countdownRefreshEnabled,
+);

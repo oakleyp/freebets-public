@@ -16,9 +16,30 @@ export function* getBet() {
     yield put(actions.betLoaded(betData));
   } catch (err: any) {
     if (err.response?.status === 404) {
-      yield put(actions.betLoadingError(err));
+      yield put(actions.betLoadingError(BetViewErrorType.NOT_FOUND_ERROR));
     } else {
       yield put(actions.betLoadingError(BetViewErrorType.RESPONSE_ERROR));
+    }
+  }
+}
+
+export function* getBetBackground() {
+  const betId = yield select(selectBetId);
+  const requestURL = `${process.env.REACT_APP_API_URL}/api/v1/bets/${betId}`;
+
+  try {
+    // Call our request helper (see 'utils/request')
+    const betData: BetViewResponse = yield call(request, requestURL);
+    yield put(actions.betLoadedBackground(betData));
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      yield put(
+        actions.betLoadingErrorBackground(BetViewErrorType.NOT_FOUND_ERROR),
+      );
+    } else {
+      yield put(
+        actions.betLoadingErrorBackground(BetViewErrorType.RESPONSE_ERROR),
+      );
     }
   }
 }
@@ -27,5 +48,8 @@ export function* getBet() {
  * Root saga manages watcher lifecycle
  */
 export function* betViewSaga() {
-  yield all([takeLatest(actions.loadBet.type, getBet)]);
+  yield all([
+    takeLatest(actions.loadBet.type, getBet),
+    takeLatest(actions.loadBetBackground.type, getBetBackground),
+  ]);
 }

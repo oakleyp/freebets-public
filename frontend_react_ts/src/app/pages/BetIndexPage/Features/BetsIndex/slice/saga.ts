@@ -1,4 +1,12 @@
-import { call, put, select, takeLatest, all } from 'redux-saga/effects';
+import {
+  call,
+  put,
+  select,
+  takeLatest,
+  all,
+  race,
+  takeLeading,
+} from 'redux-saga/effects';
 import { request } from 'utils/request';
 import { selectCurrentBetSearchParams } from './selectors';
 import { BetsListResponse } from 'types/Bet';
@@ -47,19 +55,15 @@ export function* getBetsList() {
   }
 }
 
-export function* reloadWithCurrentBetSearchParams() {
-  yield put(actions.loadBets());
-}
-
 /**
  * Root saga manages watcher lifecycle
  */
 export function* betsIndexSaga() {
   yield all([
-    takeLatest(actions.loadBets.type, getBetsList),
-    takeLatest(
-      actions.setBetSearchParams.type,
-      reloadWithCurrentBetSearchParams,
+    // Take only first refresh dispatch (prevents needless parallel loads)
+    takeLeading(
+      [actions.loadBets.type, actions.setBetSearchParams.type],
+      getBetsList,
     ),
   ]);
 }

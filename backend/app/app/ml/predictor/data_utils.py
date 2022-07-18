@@ -114,11 +114,13 @@ def canon_age_code(race: Race) -> Optional[str]:
 
 
 # "4 1/2 F" | "4 F"
-FURLONGS_PATTERN = re.compile("(?P<whole>\d+)(?: (?P<num>\d+)\/(?P<denom>\d+))* F") # noqa
+FURLONGS_PATTERN = re.compile(
+    "(?P<whole>\d+)(?: (?P<num>\d+)\/(?P<denom>\d+))* F"
+)  # noqa
 # "4 1/2 M" | "4 M"
-MILES_PATTERN = re.compile("(?P<whole>\d+)(?: (?P<num>\d+)\/(?P<denom>\d+))* M") # noqa
+MILES_PATTERN = re.compile("(?P<whole>\d+)(?: (?P<num>\d+)\/(?P<denom>\d+))* M")  # noqa
 # "4 1/2 Y" | "4 Y"
-YARDS_PATTERN = re.compile("(?P<whole>\d+)(?: (?P<num>\d+)\/(?P<denom>\d+))* Y") # noqa
+YARDS_PATTERN = re.compile("(?P<whole>\d+)(?: (?P<num>\d+)\/(?P<denom>\d+))* Y")  # noqa
 
 FURLONGS_CONV_TABLE: Dict[Pattern, Callable[[float], float]] = {
     FURLONGS_PATTERN: lambda x: x,

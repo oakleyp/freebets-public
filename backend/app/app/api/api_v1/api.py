@@ -1,4 +1,3 @@
-from typing import Callable, Any
 from fastapi import APIRouter
 
 from app.api.api_v1.endpoints import bets, items, login, users, utils

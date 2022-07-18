@@ -1,5 +1,5 @@
 import { AppBar } from 'app/components/AppBar/Loadable';
-import * as React from 'react';
+import React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -7,7 +7,6 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import Container from '@mui/material/Container';
-import MenuIcon from '@mui/icons-material/Menu';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 // import Avatar from '@mui/material/Avatar';
@@ -19,6 +18,10 @@ import { useThemeSlice } from 'styles/theme/slice';
 import { selectThemeKey } from 'styles/theme/slice/selectors';
 import { DarkMode, LightMode } from '@mui/icons-material';
 import { saveTheme } from 'styles/theme/utils';
+import { ThemeProvider } from 'styles/theme/ThemeProvider';
+import { ScrollTopArrow } from 'app/components/ScrollTopArrow';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Fab from '@mui/material/Fab';
 
 const pages = [];
 const settings = ['Account', 'Logout'];
@@ -78,28 +81,29 @@ export function PageWrapper({ children }: Props) {
     currentThemePropMap[currentTheme] || currentThemePropMap.light;
 
   return (
-    <>
-      <CssBaseline />
-      <AppBar position="static">
-        <Container maxWidth="xl">
-          <Toolbar disableGutters>
-            <Typography
-              variant="h6"
-              noWrap
-              component="a"
-              href="/"
-              sx={{
-                mr: 2,
-                display: { xs: 'none', md: 'flex' },
-                fontWeight: 700,
-                color: 'inherit',
-                textDecoration: 'none',
-              }}
-            >
-              Freebets
-            </Typography>
+    <ThemeProvider>
+      <>
+        <CssBaseline />
+        <AppBar position="static" id="back-to-top-anchor">
+          <Container maxWidth="xl">
+            <Toolbar disableGutters>
+              <Typography
+                variant="h6"
+                noWrap
+                component="a"
+                href="/"
+                sx={{
+                  mr: 2,
+                  display: { xs: 'none', md: 'flex' },
+                  fontWeight: 700,
+                  color: 'inherit',
+                  textDecoration: 'none',
+                }}
+              >
+                Freebets
+              </Typography>
 
-            {/* <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
+              {/* <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
               <IconButton
                 size="large"
                 aria-label="account of current user"
@@ -135,47 +139,47 @@ export function PageWrapper({ children }: Props) {
                 ))}
               </Menu>
             </Box> */}
-            <Typography
-              variant="h5"
-              noWrap
-              component="a"
-              href=""
-              sx={{
-                mr: 2,
-                display: { xs: 'flex', md: 'none' },
-                flexGrow: 1,
-                // letterSpacing: '.3rem',
-                color: 'inherit',
-                textDecoration: 'none',
-              }}
-            >
-              Freebets
-            </Typography>
-            <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-              {pages.map(page => (
-                <Button
-                  key={page}
-                  onClick={handleCloseNavMenu}
-                  sx={{ my: 2, color: 'white', display: 'block' }}
-                >
-                  {page}
-                </Button>
-              ))}
-            </Box>
-
-            <Box sx={{ flexGrow: 0 }}>
-              <Stack direction="row" spacing={1}>
-                <Tooltip title="Toggle dark mode">
-                  <IconButton
-                    color="inherit"
-                    onClick={currentThemeProps.displayIconClick}
+              <Typography
+                variant="h5"
+                noWrap
+                component="a"
+                href="/"
+                sx={{
+                  mr: 2,
+                  display: { xs: 'flex', md: 'none' },
+                  flexGrow: 1,
+                  // letterSpacing: '.3rem',
+                  color: 'inherit',
+                  textDecoration: 'none',
+                }}
+              >
+                Freebets
+              </Typography>
+              <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+                {pages.map(page => (
+                  <Button
+                    key={page}
+                    onClick={handleCloseNavMenu}
+                    sx={{ my: 2, color: 'white', display: 'block' }}
                   >
-                    <Badge color="secondary">
-                      {currentThemeProps.displayIcon}
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
-                {/* <Tooltip title="Open settings">
+                    {page}
+                  </Button>
+                ))}
+              </Box>
+
+              <Box sx={{ flexGrow: 0 }}>
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="Toggle dark mode">
+                    <IconButton
+                      color="inherit"
+                      onClick={currentThemeProps.displayIconClick}
+                    >
+                      <Badge color="secondary">
+                        {currentThemeProps.displayIcon}
+                      </Badge>
+                    </IconButton>
+                  </Tooltip>
+                  {/* <Tooltip title="Open settings">
                   <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                     <Avatar
                       alt="Remy Sharp"
@@ -183,49 +187,55 @@ export function PageWrapper({ children }: Props) {
                     />
                   </IconButton>
                 </Tooltip> */}
-              </Stack>
-              <Menu
-                sx={{ mt: '45px' }}
-                id="menu-appbar"
-                anchorEl={anchorElUser}
-                anchorOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                open={Boolean(anchorElUser)}
-                onClose={handleCloseUserMenu}
-              >
-                {settings.map(setting => (
-                  <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                    <Typography textAlign="center">{setting}</Typography>
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
-          </Toolbar>
-        </Container>
-      </AppBar>
-      <Box
-        component="main"
-        sx={{
-          backgroundColor: theme =>
-            theme.palette.mode === 'light'
-              ? theme.palette.grey[100]
-              : theme.palette.grey[900],
-          flexGrow: 1,
-          height: '100vh',
-          overflow: 'auto',
-        }}
-      >
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          {children}
-        </Container>
-      </Box>
-    </>
+                </Stack>
+                <Menu
+                  sx={{ mt: '45px' }}
+                  id="menu-appbar"
+                  anchorEl={anchorElUser}
+                  anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  keepMounted
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  open={Boolean(anchorElUser)}
+                  onClose={handleCloseUserMenu}
+                >
+                  {settings.map(setting => (
+                    <MenuItem key={setting} onClick={handleCloseUserMenu}>
+                      <Typography textAlign="center">{setting}</Typography>
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </Box>
+            </Toolbar>
+          </Container>
+        </AppBar>
+        <Box
+          component="main"
+          sx={{
+            backgroundColor: theme =>
+              theme.palette.mode === 'light'
+                ? theme.palette.grey[100]
+                : theme.palette.grey[900],
+            flexGrow: 1,
+            pb: 1,
+            height: '100%',
+          }}
+        >
+          <Container maxWidth="lg" sx={{ mt: 3, mb: 3 }}>
+            {children}
+          </Container>
+        </Box>
+        <ScrollTopArrow>
+          <Fab size="small" aria-label="scroll back to top">
+            <KeyboardArrowUpIcon />
+          </Fab>
+        </ScrollTopArrow>
+      </>
+    </ThemeProvider>
   );
 }

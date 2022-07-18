@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
 from datetime import date
 
+
 class AbstractHistoricalRacingClientException(Exception):
     pass
 
+
 class AbstractHistoricalRacingClient(ABC):
     """Client used to pull historical racing data."""
+
     @abstractmethod
     def download_chart_to_file(
         self,
@@ -15,4 +18,6 @@ class AbstractHistoricalRacingClient(ABC):
         tdate: date,
         race_no: str = "A",
     ) -> None:
-        raise NotImplementedError("download_chart_to_file() not implemented for %s" % self.__class__.__name__)
+        raise NotImplementedError(
+            "download_chart_to_file() not implemented for %s" % self.__class__.__name__
+        )

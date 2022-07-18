@@ -3,10 +3,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
+from wonderwords import RandomWord
 
 from app.lib.schemas.live_racing import (
+    EntryPoolTotals,
     Featured,
     RaceDetails,
+    RacePoolTotals,
     RaceWithStarterDetails,
     StarterDetails,
     SurfaceConditions,
@@ -14,6 +17,8 @@ from app.lib.schemas.live_racing import (
     TrackWithRaceDetails,
 )
 from app.tests.utils.utils import random_datetime_in_range, random_lower_string
+
+rand_word = RandomWord()
 
 
 def create_uniform_range_for_time_unit(n: int, unit: str) -> List[float]:
@@ -38,14 +43,26 @@ def create_random_odds_str() -> str:
     return f"{random.randint(1, 50)}/{random.randint(1,3)}"
 
 
+def create_random_horse_name() -> str:
+    return " ".join(
+        rand_word.random_words(
+            random.randint(1, 2), include_parts_of_speech=["noun", "adjective"]
+        )
+    ).title()
+
+
 def create_race_details_n(
     n: int,
     *,
     adjacent: bool = False,
-    adjacent_dt_start: datetime = datetime.now(timezone.utc),
+    adjacent_dt_start: datetime = None,
     adjacent_increment: str = "minutes",
-    **race_detail_args
+    **race_detail_args,
 ) -> List[RaceDetails]:
+    start = adjacent_dt_start
+    if not start:
+        start = datetime.now(timezone.utc)
+
     if not adjacent:
         return [create_race_details(i + 1, **race_detail_args) for i in range(n)]
 
@@ -53,8 +70,8 @@ def create_race_details_n(
 
     results: List[RaceDetails] = []
 
-    curr_start = adjacent_dt_start
-    curr_end = adjacent_dt_start
+    curr_start = start
+    curr_end = start
 
     for i in range(n):
         curr_end = curr_start + timedelta(**{adjacent_increment: uniform_rng[i]})
@@ -71,21 +88,27 @@ def create_race_details_n(
 def create_race_details(
     race_number: int,
     *,
-    dt_range: Tuple[datetime, datetime] = (
-        datetime.now(timezone.utc),
-        datetime.now(timezone.utc) + timedelta(hours=2),
-    ),
+    dt_range: Tuple[datetime, datetime] = None,
     status: str = "Open",
     current_race: bool = False,
-    precision_mod: str = "minutes"
+    precision_mod: str = "minutes",
 ) -> RaceDetails:
+    effective_dt_range = dt_range
+    if not effective_dt_range:
+        effective_dt_range = (
+            (
+                datetime.now(timezone.utc),
+                datetime.now(timezone.utc) + timedelta(hours=2),
+            ),
+        )
+
     post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
 
-    print(*dt_range, post_time)
+    print(*effective_dt_range, post_time)
 
     return RaceDetails(
         raceNumber=race_number,
-        raceDate=random_datetime_in_range(*dt_range).date(),
+        raceDate=random_datetime_in_range(*effective_dt_range).date(),
         postTime=post_time,
         postTimeStamp=post_time.timestamp() * 1000,
         mtp=99,
@@ -105,12 +128,19 @@ def create_race_details(
     )
 
 
-def create_track_with_race_details_n(n: int) -> List[TrackWithRaceDetails]:
-    return [create_track_with_race_details() for _ in range(n)]
+def create_track_with_race_details_n(
+    n: int, race_details_args: Dict[str, Any] = {}, races_per_track: int = 2
+) -> List[TrackWithRaceDetails]:
+    return [
+        create_track_with_race_details(
+            race_details_args=race_details_args, races_per_track=races_per_track
+        )
+        for _ in range(n)
+    ]
 
 
 def create_track_with_race_details(
-    race_details_args: Dict[str, Any] = {}
+    race_details_args: Dict[str, Any] = {}, races_per_track: int = 2,
 ) -> TrackWithRaceDetails:
     return TrackWithRaceDetails(
         brisCode=random_lower_string(length=3),
@@ -123,11 +153,17 @@ def create_track_with_race_details(
         allowsConditionalWagering=True,
         surfaceConditions=[SurfaceConditions(type="dirt", condition="fast",)],
         featured=[Featured(featuredTrackId=1, label=random_lower_string(), races=3,)],
-        races=create_race_details_n(2, adjacent=True, **race_details_args),
+        races=create_race_details_n(
+            races_per_track, adjacent=True, **race_details_args
+        ),
     )
 
-def create_track_with_race_and_starter_details_n(n: int) -> List[TrackWithRaceAndStarterDetails]:
+
+def create_track_with_race_and_starter_details_n(
+    n: int,
+) -> List[TrackWithRaceAndStarterDetails]:
     return [create_track_with_race_and_starter_details() for _ in range(n)]
+
 
 def create_track_with_race_and_starter_details(
     race_details_args: Dict[str, Any] = {}
@@ -146,23 +182,31 @@ def create_track_with_race_and_starter_details(
         races=create_race_and_starter_details_n(2, adjacent=True, **race_details_args),
     )
 
+
 def create_race_and_starter_details_n(
     n: int,
     *,
     adjacent: bool = False,
-    adjacent_dt_start: datetime = datetime.now(timezone.utc),
+    adjacent_dt_start: datetime = None,
     adjacent_increment: str = "minutes",
-    **race_detail_args
+    **race_detail_args,
 ) -> List[RaceWithStarterDetails]:
+    start = adjacent_dt_start
+
+    if not start:
+        start = datetime.now(timezone.utc)
+
     if not adjacent:
-        return [create_race_and_starter_details(i + 1, **race_detail_args) for i in range(n)]
+        return [
+            create_race_and_starter_details(i + 1, **race_detail_args) for i in range(n)
+        ]
 
     uniform_rng = create_uniform_range_for_time_unit(n, adjacent_increment)
 
     results: List[RaceDetails] = []
 
-    curr_start = adjacent_dt_start
-    curr_end = adjacent_dt_start
+    curr_start = start
+    curr_end = start
 
     for i in range(n):
         curr_end = curr_start + timedelta(**{adjacent_increment: uniform_rng[i]})
@@ -175,24 +219,31 @@ def create_race_and_starter_details_n(
 
     return results
 
+
 def create_race_and_starter_details(
     race_number: int,
     *,
-    dt_range: Tuple[datetime, datetime] = (
-        datetime.now(timezone.utc),
-        datetime.now(timezone.utc) + timedelta(hours=2),
-    ),
+    dt_range: Tuple[datetime, datetime] = None,
     status: str = "Open",
     current_race: bool = False,
-    precision_mod: str = "minutes"
+    precision_mod: str = "minutes",
 ) -> RaceWithStarterDetails:
-    post_time = random_datetime_in_range(*dt_range, precision_modifier=precision_mod)
+    effective_dt_range = dt_range
+    if not effective_dt_range:
+        effective_dt_range = (
+            datetime.now(timezone.utc),
+            datetime.now(timezone.utc) + timedelta(hours=2),
+        )
 
-    print(*dt_range, post_time)
+    post_time = random_datetime_in_range(
+        *effective_dt_range, precision_modifier=precision_mod
+    )
+
+    print(*effective_dt_range, post_time)
 
     return RaceWithStarterDetails(
         raceNumber=race_number,
-        raceDate=random_datetime_in_range(*dt_range).date(),
+        raceDate=random_datetime_in_range(*effective_dt_range).date(),
         postTime=post_time,
         postTimeStamp=post_time.timestamp() * 1000,
         mtp=99,
@@ -209,12 +260,28 @@ def create_race_and_starter_details(
         carryover=[],
         currentRace=current_race,
         hasExpertPick=True,
-        starters=create_starters_n(random.randint(6, 15))
+        starters=create_starters_n(random.randint(6, 15)),
     )
 
 
 def create_starters_n(n: int) -> List[StarterDetails]:
-    return [create_starter(n, n) for n in range(n)]
+    starters = [create_starter(n, n) for n in range(n)]
+
+    active_starters = [starter for starter in starters if not starter.scratched]
+
+    # Fix odds to sum to 1
+    odds = [random.randint(3, 50) for _ in active_starters]
+
+    odds_sum = sum(odds)
+    odds = [odds / odds_sum for odds in odds]
+
+    for starter, odds in zip(active_starters, odds):
+        starter.morningLineOdds = f"{1/odds}/1"
+        starter.profitlineOdds = f"{1/odds}/1"
+        starter.liveOdds = f"{1/odds}/1"
+
+    return starters
+
 
 def create_starter(horse_num: int, pp: int) -> StarterDetails:
     return StarterDetails(
@@ -224,10 +291,10 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         programNumber=str(horse_num),
         sortableProgramNumber=horse_num,
         bettingInterest=random.randint(0, 12),
-        name=random_lower_string(),
+        name=create_random_horse_name(),
         oddsTrend=None,
         oddsRank=random.randint(0, 12),
-        yob=random_lower_string(length=6),
+        yob=str(random.randint(2010, 2022)),
         whelpDate=None,
         color=random_lower_string(length=12),
         sex=random_lower_string(length=12),
@@ -290,7 +357,82 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
         weightChange=[False, None, True][random.randint(0, 2)],
         weightCorrection=[False, None, True][random.randint(0, 2)],
         otherChange=[False, None, True][random.randint(0, 2)],
-        profitlineOdds=random_lower_string(length=12),
-        liveOdds=random_lower_string(length=12),
-        scratched=[False, None, True][random.randint(0, 2)],
+        profitlineOdds=create_random_odds_str(),
+        liveOdds=create_random_odds_str(),
+        scratched=[False, False, False, False, False, False][random.randint(0, 5)],
+    )
+
+
+def create_entry_pool_totals(
+    entry: StarterDetails,
+    current_pool_totals: EntryPoolTotals = None,
+    flat_pool_total: int = 20_000,
+    num_betters: int = None,
+) -> EntryPoolTotals:
+    entry_odds_frac = 1 / entry.liveOddsNumeric()
+
+    def rand_variance():
+        return 1 / random.randint(2, 5)
+
+    if current_pool_totals:
+        return EntryPoolTotals(
+            program_no=entry.programNumber,
+            win_total=(current_pool_totals.win_total * entry_odds_frac)
+            + rand_variance() * current_pool_totals.win_total,
+            place_total=(current_pool_totals.place_total * entry_odds_frac)
+            + rand_variance() * current_pool_totals.place_total,
+            show_total=(current_pool_totals.show_total * entry_odds_frac)
+            + rand_variance() * current_pool_totals.show_total,
+        )
+
+    return EntryPoolTotals(
+        program_no=entry.programNumber,
+        win_total=(flat_pool_total * entry_odds_frac)
+        + rand_variance() * flat_pool_total,
+        place_total=(flat_pool_total * entry_odds_frac)
+        + rand_variance() * flat_pool_total,
+        show_total=(flat_pool_total * entry_odds_frac)
+        + rand_variance() * flat_pool_total,
+    )
+
+
+def create_race_pool_totals(
+    race: RaceWithStarterDetails,
+    current_pool_totals: RacePoolTotals = None,
+    num_betters: int = None,
+) -> RacePoolTotals:
+    if not current_pool_totals:
+        pool_total = random.randint(20_000, 50_000)
+
+        entries_totals = {
+            entry.programNumber: create_entry_pool_totals(
+                entry, flat_pool_total=pool_total
+            )
+            for entry in race.starters
+        }
+    else:
+        entries_totals = {
+            entry.programNumber: create_entry_pool_totals(
+                entry,
+                current_pool_totals=current_pool_totals.entries_to_pools_map[
+                    entry.programNumber
+                ],
+            )
+            for entry in race.starters
+        }
+
+    win_total: float = 0
+    place_total: float = 0
+    show_total: float = 0
+
+    for totals in entries_totals.values():
+        win_total += totals.win_total
+        place_total += totals.place_total
+        show_total += totals.show_total
+
+    return RacePoolTotals(
+        win_total=win_total,
+        place_total=place_total,
+        show_total=show_total,
+        entries_to_pools_map=entries_totals,
     )

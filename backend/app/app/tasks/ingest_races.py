@@ -4,9 +4,9 @@ from typing import List
 import sqlalchemy
 
 from app.db.session import SessionLocal
-from app.lib_private.clients.live_racing import LiveRacingClient
 from app.lib.crawlers.live_racing import LiveRacingCrawler
 from app.lib.schemas.live_racing import TrackWithRaceAndStarterDetails
+from app.lib_private.clients.live_racing import LiveRacingClient
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
 

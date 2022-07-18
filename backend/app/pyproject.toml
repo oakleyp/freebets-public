@@ -34,6 +34,7 @@ hyperopt = "^0.2.7"
 aio-pika = "^8.0.3"
 bandit = "^1.7.4"
 pre-commit = "^2.19.0"
+wonderwords = "^2.2.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"

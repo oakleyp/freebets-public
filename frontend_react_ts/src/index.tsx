@@ -11,7 +11,6 @@ import 'react-app-polyfill/stable';
 import * as React from 'react';
 import * as ReactDOMClient from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { ThemeProvider } from 'styles/theme/ThemeProvider';
 
 // Use consistent styling
 import 'sanitize.css/sanitize.css';
@@ -33,13 +32,11 @@ const MOUNT_NODE = document.getElementById('root') as HTMLElement;
 
 ReactDOMClient.createRoot(MOUNT_NODE!).render(
   <Provider store={store}>
-    <ThemeProvider>
-      <HelmetProvider>
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
-      </HelmetProvider>
-    </ThemeProvider>
+    <HelmetProvider>
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    </HelmetProvider>
   </Provider>,
 );
 

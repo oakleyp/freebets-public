@@ -18,12 +18,9 @@ RUN apt-get update && apt-get install -y wget --no-install-recommends \
 
 WORKDIR /app
 
-RUN npm install puppeteer
+RUN yarn add puppeteer
 
 COPY ./nginx.conf /nginx.conf
-
-WORKDIR /app
-
 COPY package*.json /app/
 
 RUN yarn install
@@ -32,7 +29,7 @@ COPY ./ /app/
 
 ARG FRONTEND_ENV=production
 
-ENV REACT_APP_ENV=${FRONTEND_ENV}
+# ENV REACT_APP_ENV=${FRONTEND_ENV}
 
 # Comment out the next line to disable tests
 # RUN npm run test

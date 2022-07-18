@@ -25,6 +25,8 @@ export const initialState: BetsIndexState = {
     trackCodes: [], // TODO
   },
   selectedBet: null,
+  nextRefreshTs: null,
+  countdownRefreshEnabled: false,
 };
 
 const slice = createSlice({
@@ -34,6 +36,7 @@ const slice = createSlice({
     loadBets(state) {
       state.loading = true;
       state.error = null;
+      state.countdownRefreshEnabled = false;
     },
     betsLoaded(state, action: PayloadAction<BetsListResponse>) {
       const resp = action.payload;
@@ -41,20 +44,36 @@ const slice = createSlice({
       state.currentBetList.multiBets = resp.multi_bets;
       state.currentBetSearchParams.betStratTypes = resp.bet_strat_types;
       state.currentBetSearchParams.betTypes = resp.bet_types;
-      state.currentBetSearchParams.trackCodes = resp.track_codes;
+      // Only add previously unseen track codes to default filter
+      state.currentBetSearchParams.trackCodes = [
+        ...new Set([
+          ...resp.track_codes,
+          ...resp.all_track_codes.filter(
+            tc => !state.availableFilterValues.trackCodes.includes(tc),
+          ),
+        ]),
+      ];
       state.currentBetSearchParams.limit = resp.limit;
       state.currentBetSearchParams.skip = resp.skip;
       state.availableFilterValues.trackCodes = resp.all_track_codes;
       state.availableFilterValues.betTypes = resp.all_bet_types;
       state.availableFilterValues.betStratTypes = resp.all_bet_strat_types;
+      state.nextRefreshTs = resp.next_refresh_ts;
       state.loading = false;
+      state.countdownRefreshEnabled = true;
     },
     betsLoadingError(state, action: PayloadAction<BetsErrorType>) {
       state.error = action.payload;
+      state.nextRefreshTs = null;
       state.loading = false;
+      state.countdownRefreshEnabled = false;
+      state.currentBetSearchParams = initialState.currentBetSearchParams;
     },
     setBetSearchParams(state, action: PayloadAction<BetSearchParams>) {
       state.currentBetSearchParams = action.payload;
+    },
+    setCountdownRefreshEnabled(state, action: PayloadAction<boolean>) {
+      state.countdownRefreshEnabled = action.payload;
     },
   },
 });

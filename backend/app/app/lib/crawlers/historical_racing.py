@@ -2,7 +2,10 @@ import logging
 from datetime import date
 from typing import Generator, List
 
-from app.lib.clients.historical_abstract import AbstractHistoricalRacingClient, AbstractHistoricalRacingClientException
+from app.lib.clients.historical_abstract import (
+    AbstractHistoricalRacingClient,
+    AbstractHistoricalRacingClientException,
+)
 
 logger = logging.getLogger(__name__)
 
