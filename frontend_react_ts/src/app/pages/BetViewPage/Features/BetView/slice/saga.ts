@@ -1,4 +1,4 @@
-import { call, put, select, takeLatest, all, delay } from 'redux-saga/effects';
+import { call, put, select, takeLatest, all } from 'redux-saga/effects';
 
 import { request } from 'utils/request';
 import { selectBetId } from './selectors';

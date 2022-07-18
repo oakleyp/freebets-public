@@ -66,15 +66,6 @@ class Bet(Base):
     race_id = Column("race_id", Integer, ForeignKey("race.id"))
     _race = relationship("Race", backref=backref("bets", cascade="all, delete-orphan", uselist=True))
 
-    @hybrid_property
-    def race(self):
-        return self._race
-
-    @race.setter
-    def race(self, val) -> None:
-        self._race = val
-        self.bet_md5_hex = self.md5_hash().hexdigest()
-
     tags = relationship("BetTag", secondary=bet_tags)
 
     _active_entries = relationship("RaceEntry", secondary=bet_active_entries)
@@ -112,6 +103,15 @@ class Bet(Base):
             base = "root" + base
 
         return md5(base.encode())
+
+    @hybrid_property
+    def race(self):
+        return self._race
+
+    @race.setter
+    def race(self, val) -> None:
+        self._race = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
 
     @hybrid_property
     def cost(self) -> float:

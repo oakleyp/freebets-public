@@ -6,17 +6,16 @@
 
 In this platform, the main output is the `Bet`, a structure that describes:
 - The race date, number, and track that this bet can be placed
-- The type of bet, whether standard (Win, Place, Show) exotic (trifecta, exacta, tri-box, etc.)
+- The type (`BetType`) of bet, whether standard (Win, Place, Show) exotic (trifecta, exacta, tri-box, etc.)
 - The cost and min/max/average return of the bet
 - The `entries`, or horses in the race, and whether they are selected in the bet or not
+- The strategy `BetStrategyType` that created the bet.
 
 Bets can either bet `SingleBets`, where in the real world they would be equivalent to one betting slip, or `MultiBets`, which describe multiple betting slips across a range of races, or targetting a single race. For a `MultiBet`, there is an overarching `root` bet that aggregates the cost/return of all `sub_bets`.
 
-In the current design, bets are ephemeral, and are deleted and regenerated every time the live racing data is updated. This is due to the fact that live odds change constantly up to seconds before the race, and what was a good bet at one minute may not be in the next. As a result, it doesn't seem useful at this point to go to the effort of supporting partial bet updates, since this would add a lot of complexity and the generation process is relatively inexpensive, although this may change in the future.
-
 *Entries/Starters*
 
-These terms are used somewhat interchangeably, but refer to the horses in the race that are included in a bet. An `Entry` holds all the significant data that is available from the live racing source, including:
+These terms are used somewhat interchangeably in this codebase, but refer to the horses in the race that are included in a bet. An `Entry` holds all the significant data that is available from the live racing source, including:
 - The horse's name, number, weight, jockey, trainer
 - The horse's book odds
 - The horse's predicted win probability

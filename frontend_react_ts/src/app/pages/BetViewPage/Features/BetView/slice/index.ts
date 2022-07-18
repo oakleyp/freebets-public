@@ -3,7 +3,7 @@ import { BetViewResponse } from 'types/Bet';
 import { createSlice } from 'utils/@reduxjs/toolkit';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 import { betViewSaga } from './saga';
-import { BetViewState, BetViewErrorType, getBetDiff } from './types';
+import { BetViewState, BetViewErrorType } from './types';
 
 export const initialState: BetViewState = {
   betId: null,

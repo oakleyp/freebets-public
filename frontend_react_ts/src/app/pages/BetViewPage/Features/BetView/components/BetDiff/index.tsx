@@ -10,12 +10,10 @@ import {
 } from '../../slice/selectors';
 
 import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
 
 import { useBetViewSlice } from '../../slice';
-import { Alert, AlertTitle, Link, AlertColor, IconButton } from '@mui/material';
+import { Alert, AlertTitle, AlertColor, IconButton } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { MultiBet, narrowBetType, SingleBet } from 'types/Bet';
 import { BetDiffDescriptor, BetViewErrorType } from '../../slice/types';
 import { CountdownTimer } from 'app/components/CountdownTimer';
 
@@ -63,11 +61,6 @@ export function BetDiff(props: Props) {
   const nextRefreshTs = useSelector(selectNextRefreshTs);
 
   const dispatch = useDispatch();
-
-  const useEffectOnMount = (effect: React.EffectCallback) => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(effect, []);
-  };
 
   if (
     !bet ||

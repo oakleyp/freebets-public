@@ -22,9 +22,7 @@ There are some amazing success stories to be found down the rabbit hole of compu
 
 Besides megayacht-winning systems, there have been many open-source examples, although these primarily target non-US race venues, where data is freely accessible (e.g. via the Betfair API), and within the limits of my searching, have not yielded a real-time system with UI.
 
-There is also an abundance of whitepapers on technical horse betting strategies ranging from the early 70s to the present, most of which I have not been able to find applied in an automated system. Some examples are:
-- https://www.gwern.net/docs/statistics/decision/1986-bolton.pdf
-- https://www.systemicrisk.ac.uk/sites/default/files/2020-09/dp-103.pdf
+There is also an abundance of whitepapers on technical horse betting strategies ranging from the early 70s to the present, most of which I have not been able to find applied in an automated system. See the [Works Referenced](#works-referenced) section for the current list of works referenced for this project.
 
 ## Purpose
 
@@ -32,7 +30,7 @@ Ultimately, I'd love for this to win me a spare billion dollars, but unfortunate
 
 I do intend to pursue the process to an effective model in scope of at least a small range of tracks and their payout rules, but seeing as this may take hundreds more man-hours, as it did in Mr. Benter's case, it seemed like this would be a good piece in the meantime to showcase my work outside the corporate silos where the majority of that work lives.
 
-That said, this can work effectively as-is in generating and evaluating bets internationally from a technical strategy and observing their profitability up to minutes before post time.
+That said, this can work effectively as-is in generating and evaluating bets internationally from a technical strategy and observing their profitability up to seconds before post time.
 
 I also think that it may be valuable as:
 - A living store for boilerplate code and design patterns that I usually have to look up/reinvent at every company transition
@@ -45,11 +43,13 @@ In compliance with copyright law, there are certain aspects of this project that
 - Any code related to fetching live racing data
 - Any code related to fetching/parsing historical racing data
 
-As a result, this code will not work without somewhat substantial additions. Interfaces have been provided that specify the methods and additional services needed; it is up to the user to implement them. See the `Batteries` section in the design docs for more details.
+As a result, this platform will not be useful for live races without somewhat substantial additions. Interfaces have been provided that specify the methods and additional services needed; it is up to the user to implement them. See the `Batteries` section in the design docs for more details.
+
+For demo purposes, a "demo" racing client that generates fake races has been implemented.
 
 ## Engineering / Design Docs
 
-With the shiny consumer-grade docs out of the way for now, the rest of my documentation effort will be focused on expanding the list below:
+With the consumer-grade docs out of the way for now, the rest of my documentation effort will be focused on expanding the list below:
 
 - [Initial Setup](./docs/init_setup.md)
 - [Batteries](./docs/design/batteries.md)
@@ -70,19 +70,23 @@ With the shiny consumer-grade docs out of the way for now, the rest of my docume
 
 ## WIPs
 
-- Exotic/Complex Technical Bets & Strategies
-- CLI
-- ML Model Improvements
-- Frontend UI Improvements
-- Test Coverage
+- [] Exotic/Complex Technical Bets & Strategies
+- [] CLI
+- [] ML Model Improvements
+
+## Future Goals
+
+- NLP Solver for original Dr. Z Formula
 
 ## Contributing
 
-I don't expect any contributions at this point, but will be glad to accept them as they come with the time I have available and the loosest guarantees you can imagine.
+I don't expect any contributions at this point, but will be glad to review and accept them as they come with the time I have available.
 
-## References
+## Works Referenced
 
+Bolton, R. N. and R. G. Chapman. "Searching for positive returns at the track: a multinomial logit for handicapping horse races." (1986) Management Science 32, 1040–1–59
 Gramm, Marshall, and Douglas H. Owens. “Efficiency in Pari-Mutuel Betting Markets across Wagering Pools in the Simulcast Era.” Southern Economic Journal, vol. 72, no. 4, 2006, pp. 926–37. JSTOR, https://doi.org/10.2307/20111861. Accessed 14 Jul. 2022.
-Ziemba, William T., "Parimutuel Betting Markets: Racetracks and Lotteries Revisited" (December 21, 2021). Available at SSRN: https://ssrn.com/abstract=3865785 or http://dx.doi.org/10.2139/ssrn.3865785
 Peter Cotton, "Inferring Relative Ability from Winning Probability in Multientrant Contests", SIAM Journal on Financial Mathematics 2021 12:1, 295-317
+Ziemba, William T., Hausch, Donald. Beat the Racetrack. Echo Point Books & Media, 2019. 
+Ziemba, William T., "Parimutuel Betting Markets: Racetracks and Lotteries Revisited" (December 21, 2021). Available at SSRN: https://ssrn.com/abstract=3865785 or http://dx.doi.org/10.2139/ssrn.3865785
 

@@ -6,7 +6,6 @@
 import * as React from 'react';
 import { MultiBet, SingleBet } from 'types/Bet';
 import { SingleBetView } from 'app/components/SingleBetView';
-import { CountdownTimer } from 'app/components/CountdownTimer';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';

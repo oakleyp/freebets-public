@@ -1,7 +1,7 @@
 import { AppBar } from 'app/components/AppBar/Loadable';
-import React, { useRef } from 'react';
+import React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
-import Box, { BoxProps } from '@mui/material/Box';
+import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -100,7 +100,7 @@ export function PageWrapper({ children }: Props) {
                   textDecoration: 'none',
                 }}
               >
-                <sub>ijk</sub>Bets
+                Freebets
               </Typography>
 
               {/* <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
@@ -153,7 +153,7 @@ export function PageWrapper({ children }: Props) {
                   textDecoration: 'none',
                 }}
               >
-                <sub>ijk</sub>Bets
+                Freebets
               </Typography>
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
                 {pages.map(page => (
