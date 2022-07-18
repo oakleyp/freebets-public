@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List
 
 from sqlalchemy import BigInteger, Boolean, Column, Date, Float, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
 from app.db.custom_types import TZDateTime

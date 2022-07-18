@@ -1,19 +1,16 @@
 import logging
 from typing import Dict, List, Optional, Union
-from sqlalchemy import or_
 
-from sqlalchemy.orm import Session, make_transient, joinedload
+from sqlalchemy.orm import Session, joinedload, make_transient
 
 from app.models.bet import Bet
 from app.models.race import Race
-from app.raceday.bet_strategy.bet_strategies import (
-    BetResult,
-    MultiBetResult,
-)
+from app.raceday.bet_strategy.bet_strategies import BetResult, MultiBetResult
 from app.raceday.bet_strategy.bet_tagger import BetTagger
 from app.raceday.bet_strategy.generator import BetGen
 
 logger = logging.getLogger(__name__)
+
 
 class RaceBetProcessor:
     """
@@ -30,7 +27,15 @@ class RaceBetProcessor:
 
     Changes to the session are committed as a result of this process.
     """
-    def __init__(self, db: Session, race: Race, *, use_pool_totals: bool = False, max_bets: Optional[int] = None) -> None:
+
+    def __init__(
+        self,
+        db: Session,
+        race: Race,
+        *,
+        use_pool_totals: bool = False,
+        max_bets: Optional[int] = None
+    ) -> None:
         self.db = db
         self.race = race
         self.use_pool_totals = use_pool_totals
@@ -40,7 +45,10 @@ class RaceBetProcessor:
 
     def existing_bets(self) -> List[Bet]:
         existing_race_bets: List[Bet] = (
-            self.db.query(Bet).options(joinedload(Bet.parent)).filter(Bet.race.has(Race.id == self.race.id)).all()
+            self.db.query(Bet)
+            .options(joinedload(Bet.parent))
+            .filter(Bet.race.has(Race.id == self.race.id))
+            .all()
         )
 
         return existing_race_bets
@@ -59,7 +67,6 @@ class RaceBetProcessor:
 
         return bet_map
 
-
     def bet_generator(self) -> BetGen:
         return BetGen(race=self.race, use_pool_totals=self.use_pool_totals)
 
@@ -72,9 +79,7 @@ class RaceBetProcessor:
 
         for (i, bet) in enumerate(bets):
             if self.max_bets and i >= self.max_bets:
-                logger.debug(
-                    "Reached max_bets (%d); breaking", self.max_bets
-                )
+                logger.debug("Reached max_bets (%d); breaking", self.max_bets)
                 break
 
             bet_res: Union[BetResult, MultiBetResult] = bet.result()
@@ -98,7 +103,7 @@ class RaceBetProcessor:
             for sub_bet in bet.sub_bets:
                 generated_sub_bets.append(sub_bet)
 
-        for bet in (generated_bets + generated_sub_bets):
+        for bet in generated_bets + generated_sub_bets:
             bet_hash = bet.md5_hash().hexdigest()
 
             if bet_hash in bet_map:
@@ -112,7 +117,7 @@ class RaceBetProcessor:
 
         for hash in hashes_to_delete:
             self.db.delete(bet_map[hash])
-        
+
         self.db.commit()
 
         return new_bets
@@ -127,7 +132,6 @@ class RaceBetProcessor:
         if len(new_bets) > 0:
             self.db.add_all(new_bets)
 
-        
         self.db.commit()
 
         return result_bets

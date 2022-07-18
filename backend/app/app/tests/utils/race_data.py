@@ -364,7 +364,10 @@ def create_starter(horse_num: int, pp: int) -> StarterDetails:
 
 
 def create_entry_pool_totals(
-    entry: StarterDetails, current_pool_totals: EntryPoolTotals = None, flat_pool_total: int = 20_000, num_betters: int = None
+    entry: StarterDetails,
+    current_pool_totals: EntryPoolTotals = None,
+    flat_pool_total: int = 20_000,
+    num_betters: int = None,
 ) -> EntryPoolTotals:
     entry_odds_frac = 1 / entry.liveOddsNumeric()
 
@@ -374,16 +377,22 @@ def create_entry_pool_totals(
     if current_pool_totals:
         return EntryPoolTotals(
             program_no=entry.programNumber,
-            win_total=(current_pool_totals.win_total * entry_odds_frac) + rand_variance() * current_pool_totals.win_total,
-            place_total=(current_pool_totals.place_total * entry_odds_frac) + rand_variance() * current_pool_totals.place_total,
-            show_total=(current_pool_totals.show_total  * entry_odds_frac) + rand_variance() * current_pool_totals.show_total,
+            win_total=(current_pool_totals.win_total * entry_odds_frac)
+            + rand_variance() * current_pool_totals.win_total,
+            place_total=(current_pool_totals.place_total * entry_odds_frac)
+            + rand_variance() * current_pool_totals.place_total,
+            show_total=(current_pool_totals.show_total * entry_odds_frac)
+            + rand_variance() * current_pool_totals.show_total,
         )
 
     return EntryPoolTotals(
         program_no=entry.programNumber,
-        win_total=(flat_pool_total * entry_odds_frac) + rand_variance() * flat_pool_total,
-        place_total=(flat_pool_total * entry_odds_frac) + rand_variance() * flat_pool_total,
-        show_total=(flat_pool_total * entry_odds_frac) + rand_variance() * flat_pool_total,
+        win_total=(flat_pool_total * entry_odds_frac)
+        + rand_variance() * flat_pool_total,
+        place_total=(flat_pool_total * entry_odds_frac)
+        + rand_variance() * flat_pool_total,
+        show_total=(flat_pool_total * entry_odds_frac)
+        + rand_variance() * flat_pool_total,
     )
 
 
@@ -396,12 +405,19 @@ def create_race_pool_totals(
         pool_total = random.randint(20_000, 50_000)
 
         entries_totals = {
-            entry.programNumber: create_entry_pool_totals(entry, flat_pool_total=pool_total)
+            entry.programNumber: create_entry_pool_totals(
+                entry, flat_pool_total=pool_total
+            )
             for entry in race.starters
         }
     else:
         entries_totals = {
-            entry.programNumber: create_entry_pool_totals(entry, current_pool_totals=current_pool_totals.entries_to_pools_map[entry.programNumber])
+            entry.programNumber: create_entry_pool_totals(
+                entry,
+                current_pool_totals=current_pool_totals.entries_to_pools_map[
+                    entry.programNumber
+                ],
+            )
             for entry in race.starters
         }
 

@@ -78,7 +78,9 @@ class DemoLiveRacingClient(AbstractLiveRacingClient):
 
             # slightly shift odds
             for starter in starters:
-                    starter.liveOdds = f"{starter.liveOddsNumeric() + random.uniform(-0.1, 0.1)}/1"
+                starter.liveOdds = (
+                    f"{starter.liveOddsNumeric() + random.uniform(-0.1, 0.1)}/1"
+                )
 
             return starters
         except KeyError as e:

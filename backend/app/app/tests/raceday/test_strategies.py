@@ -1,9 +1,21 @@
-from app.models.race_entry import RaceEntry
-from app.raceday.bet_strategy.bet_strategies import AvgCostRewardSortStrategy, BetStrategy, BetType, DrZPlaceBet, DrZPlaceShowArbBet, DrZShowBet, FlatBetOutlayStrategy
-from app.tests.utils.race_data import create_race_and_starter_details, create_track_with_race_and_starter_details
-import pytest
-from app.raceday.race_canonical import LiveRaceExtendedCanonical
 from sqlalchemy.orm import Session
+
+from app.models.race_entry import RaceEntry
+from app.raceday.bet_strategy.bet_strategies import (
+    AvgCostRewardSortStrategy,
+    BetStrategy,
+    BetType,
+    DrZPlaceBet,
+    DrZPlaceShowArbBet,
+    DrZShowBet,
+    FlatBetOutlayStrategy,
+)
+from app.raceday.race_canonical import LiveRaceExtendedCanonical
+from app.tests.utils.race_data import (
+    create_race_and_starter_details,
+    create_track_with_race_and_starter_details,
+)
+
 
 def setup_good_dr_z_entry():
     track_race = create_track_with_race_and_starter_details()
@@ -11,7 +23,7 @@ def setup_good_dr_z_entry():
 
     starter = race.starters[0]
     starter.scratched = False
-    starter.liveOdds = "5/1" # must be > 8/1
+    starter.liveOdds = "5/1"  # must be > 8/1
 
     track_race.races = [race]
     race_canon = LiveRaceExtendedCanonical(track_race, race).convert()
@@ -20,7 +32,11 @@ def setup_good_dr_z_entry():
     race_canon.place_pool_total = 20_000
     race_canon.show_pool_total = 20_000
 
-    good_entry: RaceEntry = [entry for entry in race_canon.entries if entry.program_no == starter.programNumber][0]
+    good_entry: RaceEntry = [
+        entry
+        for entry in race_canon.entries
+        if entry.program_no == starter.programNumber
+    ][0]
 
     good_entry.win_pool_total = 50_000
     good_entry.place_pool_total = 500
@@ -42,14 +58,21 @@ def setup_good_dr_z_entry():
 
     return (race_canon, good_entry)
 
+
 def test_dr_z_place_show_arb(db: Session):
     race_canon, good_entry = setup_good_dr_z_entry()
 
     DefaultBetStrategy = BetStrategy(
-        outlay_strategy=FlatBetOutlayStrategy(), sort_strategy=AvgCostRewardSortStrategy(),
+        outlay_strategy=FlatBetOutlayStrategy(),
+        sort_strategy=AvgCostRewardSortStrategy(),
     )
 
-    bet = DrZPlaceShowArbBet(race=race_canon, entries=race_canon.entries, selection=race_canon.entries, strategy=DefaultBetStrategy)
+    bet = DrZPlaceShowArbBet(
+        race=race_canon,
+        entries=race_canon.entries,
+        selection=race_canon.entries,
+        strategy=DefaultBetStrategy,
+    )
 
     bet_result = bet.result()
     db_bet = bet_result.to_bet_db()
@@ -74,11 +97,12 @@ def test_dr_z_place_show_arb(db: Session):
 
     print(db_bet.sub_bets)
 
-    sub_pl_bet_db = [bet for bet in db_bet.sub_bets if bet.bet_type == BetType.PLACE_BET.to_json()][0]
-    sub_sh_bet_db = [bet for bet in db_bet.sub_bets if bet.bet_type == BetType.SHOW_BET.to_json()][0]
+    sub_pl_bet_db = [
+        bet for bet in db_bet.sub_bets if bet.bet_type == BetType.PLACE_BET.to_json()
+    ][0]
+    sub_sh_bet_db = [
+        bet for bet in db_bet.sub_bets if bet.bet_type == BetType.SHOW_BET.to_json()
+    ][0]
 
     assert pl_bet_db.md5_hash().hexdigest() != sub_pl_bet_db.md5_hash().hexdigest()
     assert sh_bet_db.md5_hash().hexdigest() != sub_sh_bet_db.md5_hash().hexdigest()
-
-
-

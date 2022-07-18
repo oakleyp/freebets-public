@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from time import sleep
 from typing import Dict, List, Optional
-from app.raceday.bet_processor import RaceBetProcessor
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -21,9 +20,8 @@ from app.ml.predictor.race_predictor import RacePredictor
 from app.models.bet import Bet
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
-from app.raceday.bet_strategy.bet_strategies import (
-    BetTypeImpl,
-)
+from app.raceday.bet_processor import RaceBetProcessor
+from app.raceday.bet_strategy.bet_strategies import BetTypeImpl
 from app.raceday.processor_logger import RaceDayProcessorLogger
 from app.raceday.processor_result import ProcessOnceResult
 from app.raceday.race_canonical import LiveRaceEntryCanonical, LiveTrackBasicCanonical
@@ -102,7 +100,9 @@ class DefaultNextCheckGen(NextCheckGen):
         ):
             return time_context.lookahead_end
         # If within 5 minutes, refresh every 1 minute
-        elif watcher.post_time - (time_context.now + time_context.refresh_interval) <= timedelta(minutes=5):
+        elif watcher.post_time - (
+            time_context.now + time_context.refresh_interval
+        ) <= timedelta(minutes=5):
             return time_context.now + timedelta(minutes=1)
         # Otherwise, nct should be the refresh_interval + current time
         else:
@@ -269,7 +269,12 @@ class RaceDayProcessor:
             self._refresh_race_predictions(race)
 
             logger.debug("Regenerating bets for race %s", race)
-            race_bet_proc = RaceBetProcessor(self.db, race, use_pool_totals=use_pool_totals, max_bets=self.max_bets_per_race)
+            race_bet_proc = RaceBetProcessor(
+                self.db,
+                race,
+                use_pool_totals=use_pool_totals,
+                max_bets=self.max_bets_per_race,
+            )
 
             created_bets = race_bet_proc.create_bets()
             result_bets.extend(created_bets)

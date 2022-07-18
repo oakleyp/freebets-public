@@ -1,4 +1,3 @@
-import uuid
 from hashlib import md5
 from typing import List
 
@@ -55,7 +54,9 @@ class Bet(Base):
 
     parent_id = Column("parent_id", Integer, ForeignKey("bets.id", ondelete="CASCADE"))
     _sub_bets = relationship(
-        "Bet", cascade="all, delete-orphan", backref=backref("_parent", remote_side=[id])
+        "Bet",
+        cascade="all, delete-orphan",
+        backref=backref("_parent", remote_side=[id]),
     )
 
     _bet_type = Column("bet_type", String, index=True)  # Win / WPS / etc.
@@ -64,7 +65,9 @@ class Bet(Base):
     )  # AIWin / SafeWin / FreeWin / etc.
 
     race_id = Column("race_id", Integer, ForeignKey("race.id"))
-    _race = relationship("Race", backref=backref("bets", cascade="all, delete-orphan", uselist=True))
+    _race = relationship(
+        "Race", backref=backref("bets", cascade="all, delete-orphan", uselist=True)
+    )
 
     tags = relationship("BetTag", secondary=bet_tags)
 
@@ -83,7 +86,9 @@ class Bet(Base):
         if self.race:
             race_hash = self.race.md5_hash().hexdigest()
         elif self.sub_bets:
-            race_hash = ','.join([bet.race.md5_hash().hexdigest() for bet in self.sub_bets])
+            race_hash = ",".join(
+                [bet.race.md5_hash().hexdigest() for bet in self.sub_bets]
+            )
         else:
             # Maybe raise val error here
             # raise ValueError("bet should have race - %s" % self)

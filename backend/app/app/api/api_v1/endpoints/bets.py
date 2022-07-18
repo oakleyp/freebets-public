@@ -121,7 +121,9 @@ def read_bets(
         else:
             multi_bets.append(bet_conv.create_multi_bet_result(bet))
 
-    result_track_codes = list(set([bet.race.track_code for bet in all_bets if bet.race]))
+    result_track_codes = list(
+        set([bet.race.track_code for bet in all_bets if bet.race])
+    )
     result_bet_strat_types = list(set([bet.bet_strategy_type for bet in all_bets]))
     result_bet_types = list(set([bet.bet_type for bet in all_bets]))
 
