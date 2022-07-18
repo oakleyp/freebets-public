@@ -150,6 +150,10 @@ class BetResultConverter:
         return bet_res
 
     def create_multi_bet_result(self, bet: Bet) -> MultiBetResult:
+        for sb in bet.sub_bets:
+            if not sb.race:
+                print("WTF??", sb.id)
+
         return MultiBetResult(
             id=bet.id,
             title=bet.title,

@@ -2,10 +2,11 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from time import sleep
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
+from app.raceday.bet_processor import RaceBetProcessor
 
 from pydantic import BaseModel
-from sqlalchemy.orm import Session, make_transient
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.lib.clients.demo_live_racing_client import DemoLiveRacingClient
@@ -21,12 +22,8 @@ from app.models.bet import Bet
 from app.models.race import Race
 from app.models.race_entry import RaceEntry
 from app.raceday.bet_strategy.bet_strategies import (
-    BetResult,
     BetTypeImpl,
-    MultiBetResult,
 )
-from app.raceday.bet_strategy.bet_tagger import BetTagger
-from app.raceday.bet_strategy.generator import BetGen
 from app.raceday.processor_logger import RaceDayProcessorLogger
 from app.raceday.processor_result import ProcessOnceResult
 from app.raceday.race_canonical import LiveRaceEntryCanonical, LiveTrackBasicCanonical
@@ -156,7 +153,6 @@ class RaceDayProcessor:
 
         self.live_race_client: AbstractLiveRacingClient = live_racing_client
         self.live_race_crawler = LiveRacingCrawler(self.live_race_client)
-        self.bet_tagger = BetTagger(self.db)
         self.proc_logger = RaceDayProcessorLogger(self.db)
 
         self.race_predictor = RacePredictor()
@@ -273,9 +269,9 @@ class RaceDayProcessor:
             self._refresh_race_predictions(race)
 
             logger.debug("Regenerating bets for race %s", race)
-            created_bets = self._refresh_race_bets(
-                race, use_pool_totals=use_pool_totals
-            )
+            race_bet_proc = RaceBetProcessor(self.db, race, use_pool_totals=use_pool_totals, max_bets=self.max_bets_per_race)
+
+            created_bets = race_bet_proc.create_bets()
             result_bets.extend(created_bets)
 
         min_nct = self._get_min_watcher_nct()
@@ -396,77 +392,6 @@ class RaceDayProcessor:
 
         return races_to_refresh
 
-    def _refresh_race_bets(
-        self, race: Race, use_pool_totals: bool = False
-    ) -> List[Bet]:
-        """Regenerate bets for the given race."""
-        existing_race_bets: List[Bet] = (
-            self.db.query(Bet).filter(Bet.race.has(Race.id == race.id)).all()
-        )
-
-        # Map of bet hash -> bet
-        bet_map: Dict[str, Bet] = {}
-
-        for bet in existing_race_bets:
-            bet_hash = bet.md5_hash().hexdigest()
-            bet_map[bet_hash] = bet
-
-            if bet.parent:
-                parent_hash = bet.parent.md5_hash().hexdigest()
-                bet_map[parent_hash] = bet.parent
-
-            for sub_bet in bet.sub_bets:
-                bet_map[sub_bet.md5_hash().hexdigest()] = sub_bet
-
-        bet_gen = BetGen(race=race, use_pool_totals=use_pool_totals)
-        bets = bet_gen.all_bets()
-        result_bets: List[Bet] = []
-
-        logger.debug("Generated %d bets for race %s", len(bets), race)
-
-        for (i, bet) in enumerate(bets):
-            if i >= self.max_bets_per_race:
-                logger.debug(
-                    "Reached max_bets_per_race (%d); breaking", self.max_bets_per_race
-                )
-                break
-
-            bet_res: Union[BetResult, MultiBetResult] = bet.result()
-            bet_db = bet_res.to_bet_db()
-
-            self.bet_tagger.assign_tags(bet_db)
-
-            result_bets.append(bet_db)
-
-        logger.debug("Saving generated bets %s", result_bets)
-
-        new_bets: List[Bet] = []
-        updates_seen = set()
-
-        for bet in result_bets:
-            bet_hash = bet.md5_hash().hexdigest()
-
-            if bet_hash in bet_map:
-                make_transient(bet)
-                bet_map[bet_hash].update_shallow(bet)
-                updates_seen.add(bet_hash)
-            else:
-                new_bets.append(bet)
-
-        hashes_to_delete = set(bet_map.keys()).difference(updates_seen)
-
-        for hash in hashes_to_delete:
-            self.db.delete(bet_map[hash])
-
-        self.db.commit()
-
-        if len(new_bets):
-            self.db.add_all(new_bets)
-
-        self.db.commit()
-
-        return result_bets
-
     def _active_time_context(self) -> TimeContext:
         """Create a TimeContext based on the current time and configured lookahead."""
         now = datetime.now(timezone.utc)
@@ -530,7 +455,7 @@ class RaceDayProcessor:
             if next_check_time() falls outside time_context.
         """
         race_hash = race.md5_hash().hexdigest()
-        watcher = self.watching_races[race_hash]
+        watcher = self.watching_races.get(race_hash)
 
         if watcher is None:
             logger.error("Called _update_watcher() when none exists for race %s", race)

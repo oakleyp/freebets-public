@@ -156,9 +156,8 @@ class MultiBetResult:
 
         root_bet.sub_bets = [bet.to_bet_db() for bet in self.bet_results]
 
-        # for bet in root_bet.sub_bets:
-        #     bet.parent = root_bet
-        #     bet.race = self.race
+        for bet in root_bet.sub_bets:
+            bet.parent = root_bet
 
         return root_bet
 

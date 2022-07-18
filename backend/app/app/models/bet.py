@@ -54,7 +54,7 @@ class Bet(Base):
     _cost = Column("cost", Float, index=True)
 
     parent_id = Column("parent_id", Integer, ForeignKey("bets.id", ondelete="CASCADE"))
-    sub_bets = relationship(
+    _sub_bets = relationship(
         "Bet", cascade="all, delete-orphan", backref=backref("_parent", remote_side=[id])
     )
 
@@ -83,16 +83,19 @@ class Bet(Base):
     bet_md5_hex = Column(String, nullable=False, unique=True)
 
     def md5_hash(self):
-        race: Race = self.race
         active_entries: List["RaceEntry"] = self.active_entries
         act_entry_nos: List[str] = []
 
         for entry in active_entries:
             act_entry_nos.append(entry.program_no)
 
-        if race:
-            race_hash = race.md5_hash().hexdigest()
+        if self.race:
+            race_hash = self.race.md5_hash().hexdigest()
+        elif self.sub_bets:
+            race_hash = ','.join([bet.race.md5_hash().hexdigest() for bet in self.sub_bets])
         else:
+            # Maybe raise val error here
+            # raise ValueError("bet should have race - %s" % self)
             race_hash = "dupe should fail"
 
         base = (
@@ -103,9 +106,10 @@ class Bet(Base):
             + "%.2f" % self.cost
         )
 
-        if not self.parent:
-            sub_bet_hashes = [bet.md5_hash().hexdigest() for bet in self.sub_bets]
-            base = "root" + ",".join(sorted(sub_bet_hashes)) + base
+        if self.parent:
+            base = "sub" + self.parent.md5_hash().hexdigest() + base
+        else:
+            base = "root" + base
 
         return md5(base.encode())
 
@@ -119,12 +123,21 @@ class Bet(Base):
         self.bet_md5_hex = self.md5_hash().hexdigest()
 
     @hybrid_property
-    def parent(self) -> int:
+    def parent(self):
         return self._parent
 
     @parent.setter
     def parent(self, val) -> None:
         self._parent = val
+        self.bet_md5_hex = self.md5_hash().hexdigest()
+
+    @hybrid_property
+    def sub_bets(self) -> int:
+        return self._sub_bets
+
+    @sub_bets.setter
+    def sub_bets(self, val) -> None:
+        self._sub_bets = val
         self.bet_md5_hex = self.md5_hash().hexdigest()
 
     @hybrid_property
@@ -159,10 +172,6 @@ class Bet(Base):
         self.avg_reward = other.avg_reward
         self.max_reward = other.max_reward
 
-        for bet in other.sub_bets:
-            bet.parent = self
-            bet.race = self.race
-
     def __repr__(self) -> str:
         act_entry_nos: List[str] = []
 
@@ -176,6 +185,7 @@ class Bet(Base):
             bet_strategy_type=self.bet_strategy_type,
             cost=self.cost,
             race_id=self.race_id,
-            md5=self.md5_hash().hexdigest(),
+            md5=self.bet_md5_hex,
             parent=self.parent,
+            parent_id=self.parent_id,
         )
