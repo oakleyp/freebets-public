@@ -94,6 +94,7 @@ def read_bets(
     all_bets_q = db.query(Bet).filter(Bet.parent_id == None)
 
     if len(bet_types) > 0:
+        print(bet_types)
         all_bets_q = all_bets_q.filter(Bet.bet_type.in_(bet_types))
 
     if len(track_codes) > 0:
@@ -101,9 +102,6 @@ def read_bets(
 
     if len(bet_strat_types) > 0:
         all_bets_q = all_bets_q.filter(Bet.bet_strategy_type.in_(bet_strat_types))
-
-    if len(bet_types) > 0:
-        all_bets_q = all_bets_q.filter(Bet.bet_type.in_(bet_types))
 
     all_bets: List[Bet] = all_bets_q.order_by(Bet.id.desc()).offset(skip).limit(
         limit

@@ -368,11 +368,13 @@ class WinAllArbBet(BetTypeImpl):
         return min(b.max_reward() for b in self.bets)
 
     def avg_reward(self):
-        # This assumes that all horses have equal chance of winning,
+        # TODO: This assumes that all horses have equal chance of winning,
         # obviously need to weight by odds
-        return sum(
-            (b.max_reward() + b.outlay()) * b.effective_proba() for b in self.bets
-        ) / len(self.bets)
+        return (
+            sum((b.max_reward() + b.outlay()) * b.effective_proba() for b in self.bets)
+            / len(self.bets)
+            + self.min_reward()
+        )
 
     def max_reward(self):
         return max(b.max_reward() for b in self.bets)
