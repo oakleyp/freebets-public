@@ -49,12 +49,21 @@ const betStratTypeDisplayMap = {
   BOOK_ALL_WIN_ARB: '(Book) All Win',
   BOOK_BOX_WIN_ARB: '(Book) Box Win',
   BOOK_WIN_BET: '(Book) Win',
+  BOOK_DR_Z_PLACE_SHOW_ARB: '(Book) Dr. Z Place Show Arb.',
+  AI_DR_Z_PLACE_SHOW_ARB: '(AI) Dr. Z Place Show Arb.',
+  BOOK_PLACE_BET: '(Book) Place Bet',
+  BOOK_SHOW_BET: '(Book) Show Bet',
+  BOOK_DR_Z_PLACE_BET: '(Book) Dr. Z Place Bet',
+  BOOK_DR_Z_SHOW_BET: '(Book) Dr. Z Show Bet',
 };
 
 const betTypeDisplayMap = {
   ALL_WIN_ARB: 'All Win',
   BOX_WIN_ARB: 'Box Win',
   WIN_BET: 'Win',
+  PLACE_BET: 'Place',
+  SHOW_BET: 'Show',
+  PLACE_SHOW_ARB: '(Multi) Place/Show Arbitrage',
 };
 
 function getBetStratTypeDisplay(val: string): string {

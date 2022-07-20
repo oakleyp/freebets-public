@@ -4,6 +4,12 @@ Freebets is a platform for generating real-time horse racing bets based on both 
 
 _Batteries (and some circuitry) not included._
 
+## Live Demo
+
+[Link](https://freebets.oakleypeavler.com)
+
+This demo is currently running on randomly generated track and race data with no connection to real events. As a result, it is not useful for anything other than to demonstrate the platform (and maybe as a horse name generator).
+
 ## Inspiration
 
 Ever been to a horse racing venue? If so, you are probably familiar with your provided lifeline, the race program:
@@ -70,11 +76,11 @@ With the consumer-grade docs out of the way for now, the rest of my documentatio
 
 ## WIPs
 
-- [] Exotic/Complex Technical Bets & Strategies
-- [] CLI
-- [] ML Model Improvements
+- Exotic/Complex Technical Bets & Strategies
+- CLI
+- ML Model Improvements
 
-## Future Goals
+## Stretch Goals
 
 - NLP Solver for original Dr. Z Formula
 

@@ -26,7 +26,7 @@ def clean_db() -> Generator:
     db.close()
 
 
-def create_bet(race: Race) -> Bet:
+def create_single_bet(race: Race) -> Bet:
     bet = Bet(
         title=random_lower_string(),
         description=random_lower_string(),
@@ -46,6 +46,24 @@ def create_bet(race: Race) -> Bet:
     return bet
 
 
+def create_multi_bet(race: Race) -> Bet:
+    bet = Bet(
+        title=random_lower_string(),
+        description=random_lower_string(),
+        predicted_odds=0.8,
+        min_reward=13.12,
+        max_reward=12345.0,
+        avg_reward=200.0,
+        cost=33.0,
+        bet_type=random_lower_string(),
+        bet_strategy_type=random_lower_string(),
+    )
+
+    bet.sub_bets = [create_single_bet(race) for _ in range(2)]
+
+    return bet
+
+
 def test_bet_delete_no_delete_entries(clean_db: Session) -> None:
     track_data = create_track_with_race_details()
     races = LiveTrackBasicCanonical(track_data).convert()
@@ -61,7 +79,7 @@ def test_bet_delete_no_delete_entries(clean_db: Session) -> None:
     clean_db.add_all(races)
     clean_db.commit()
 
-    clean_db.add(create_bet(races[0]))
+    clean_db.add(create_single_bet(races[0]))
     clean_db.commit()
 
     # Test session query delete syntax - this relies on DB cascades
@@ -77,7 +95,7 @@ def test_bet_delete_no_delete_entries(clean_db: Session) -> None:
         assert len(race.entries) == og_entries_len
 
     # Test normal session delete, which uses in-python relationship logic for cascades
-    bet = create_bet(races[0])
+    bet = create_single_bet(races[0])
     clean_db.add(bet)
     clean_db.commit()
 
@@ -93,7 +111,7 @@ def test_bet_delete_no_delete_entries(clean_db: Session) -> None:
 
 
 def test_delete_race_deletes_bets(clean_db: Session) -> None:
-    track_data = create_track_with_race_details()
+    track_data = create_track_with_race_details(races_per_track=10)
     races = LiveTrackBasicCanonical(track_data).convert()
     og_entries_len = 10
 
@@ -106,19 +124,52 @@ def test_delete_race_deletes_bets(clean_db: Session) -> None:
     clean_db.add_all(races)
     clean_db.commit()
 
-    bet = create_bet(races[0])
-    bet.sub_bets = [create_bet(races[0])]
+    # Test single bet deletion
+
+    bet = create_single_bet(races[0])
     clean_db.add(bet)
     clean_db.commit()
 
     bets = clean_db.query(Bet).all()
-    assert bets == [bet, bet.sub_bets[0]]
+    assert bets == [bet]
 
     clean_db.delete(races[0])
     clean_db.commit()
 
     bets = clean_db.query(Bet).all()
     assert bets == []
+
+    # Test multi bet deletion
+
+    bet = create_multi_bet(races[1])
+    clean_db.add(bet)
+    clean_db.commit()
+
+    bets = clean_db.query(Bet).all()
+    assert bets == [bet] + bet.sub_bets
+
+    clean_db.delete(races[1])
+    clean_db.commit()
+
+    bets = clean_db.query(Bet).all()
+    assert bets == []
+
+    # Test multi bet not deleted on single child delete
+
+    bet = create_multi_bet(races[2])
+    bet.sub_bets[1].race = races[3]
+    clean_db.add(bet)
+    clean_db.commit()
+
+    bets = clean_db.query(Bet).all()
+    assert bets == [bet] + bet.sub_bets
+
+    clean_db.delete(races[2])
+    clean_db.commit()
+
+    bets = clean_db.query(Bet).all()
+    assert bet.sub_bets[0].race == races[3]
+    assert bets == [bet] + [bet.sub_bets[0]]
 
 
 def test_delete_entry_no_delete_race(db: Session) -> None:

@@ -1,2 +1,5 @@
 __pycache__
 app.egg-info
+
+# Ignore "scratch pads"
+Untitled.ipynb

@@ -1,10 +1,10 @@
 from hashlib import md5
 from typing import List
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table, and_, event
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import Session, backref, relationship
 
 from app.db.base_class import Base
 
@@ -194,3 +194,13 @@ class Bet(Base):
             parent=self.parent,
             parent_id=self.parent_id,
         )
+
+
+# At each flush, make an additional query to delete multibets that have no children.
+# This could be expensive at scale (e.g. large batch deletes),
+# but currently shouldn't be an issue.
+@event.listens_for(Session, "after_flush")
+def delete_multis_with_no_subs(session, ctx):
+    session.query(Bet).filter(and_(~Bet.sub_bets.any(), Bet.race_id == None)).delete(
+        synchronize_session=False
+    )
